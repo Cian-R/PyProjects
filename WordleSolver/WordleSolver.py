@@ -32,12 +32,6 @@ def grabInputs():
     return guessInput, resultInput
 
 
-# def print_data(letters, known, excl):
-#     print("POSSIBLE LETTERS:\n", letters)
-#     print("DATA:\n", known)
-#     print("EXCLUSIONS:\n", excl)
-
-
 FreqList = get_frequencies()
 print("WARNING! Program break if you enter a word with 3 of the same letter (e.g. swiss, daddy, fluff).")
 print("I cant be bothered to fix it right now. These words should still show up in the results.")
