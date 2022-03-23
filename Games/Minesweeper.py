@@ -206,5 +206,5 @@ while True:
             break
     clock.tick(20)
 
-print("you win lmao")
+print("you win :/")
 exit()
