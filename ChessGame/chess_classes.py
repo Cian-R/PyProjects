@@ -14,18 +14,24 @@ class Square:
         self.piece = None
         self.coords = coords
         self.truepos = [10 + (coords[0] * 75), 10 + (coords[1] * 75)]
+        self.highlighted = False
 
-    def __str__(self): return "SQUARE:>" + str(self.colour) + str(self.piece) + str(self.coords)
+    def __str__(self):
+        if self.piece:
+            return f"<<Square - {self.piece.name}>> {str(self.piece)} {str(self.coords)}"
+        else:
+            return f"<<Square>> {str(self.piece)} {str(self.coords)}"
 
     def __repr__(self): return str(self.colour) + str(self.piece) + str(self.coords)
 
     def draw(self, surf):
-        mousepos = pygame.mouse.get_pos()
-        if (self.truepos[0] < mousepos[0] < (self.truepos[0] + 75)) and \
-                (self.truepos[1] < mousepos[1] < (self.truepos[1] + 75)):
-            pygame.draw.rect(surf, (50, 200, 50), (self.truepos[0], self.truepos[1], 75, 75))
-        else:
-            pygame.draw.rect(surf, self.colour, (self.truepos[0], self.truepos[1], 75, 75))
+        pygame.draw.rect(surf, self.colour, (self.truepos[0], self.truepos[1], 75, 75))
+
+        if self.highlighted:
+            highlight = pygame.Surface((75, 75))
+            highlight.set_alpha(128)
+            highlight.fill((200, 200, 30))
+            surf.blit(highlight, (self.truepos[0], self.truepos[1]))
 
         if self.piece:
             self.piece.draw(surf, self.truepos[0], self.truepos[1])
@@ -35,7 +41,8 @@ class Square:
 
 
 class Piece:
-    def __init__(self, image):
+    def __init__(self, name, image):
+        self.name = name
         self.image = image.convert_alpha()
         self.movelist = None  # TODO: Uhh, maybe using a json file?
 

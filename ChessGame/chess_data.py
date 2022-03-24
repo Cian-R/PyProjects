@@ -1,7 +1,7 @@
 import pygame
 
 # pygame.init()
-# pygame.font.init()
+pygame.font.init()
 fonts = {
     "titlefont": pygame.font.SysFont('lucidaconsole', 70),
     "selecfont": pygame.font.SysFont('lucidaconsole', 20),
