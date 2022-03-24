@@ -1,8 +1,6 @@
 import pygame
 import json
-
-whiteSq = (238, 238, 210)
-blackSq = (118, 150, 86)
+from chess_data import blackSq, whiteSq
 
 
 class Square:
@@ -15,10 +13,11 @@ class Square:
         self.coords = coords
         self.truepos = [10 + (coords[0] * 75), 10 + (coords[1] * 75)]
         self.highlighted = False
+        self.marked = False
 
     def __str__(self):
         if self.piece:
-            return f"<<Square - {self.piece.name}>> {str(self.piece)} {str(self.coords)}"
+            return f"<<Square - {self.piece.get_name}>> {str(self.piece)} {str(self.coords)}"
         else:
             return f"<<Square>> {str(self.piece)} {str(self.coords)}"
 
@@ -36,8 +35,24 @@ class Square:
         if self.piece:
             self.piece.draw(surf, self.truepos[0], self.truepos[1])
 
+        if self.marked:
+            marker = pygame.Surface((75, 75), pygame.SRCALPHA, 32)
+            marker.set_alpha(128)
+            pygame.draw.circle(marker, (239, 66, 245), (37, 37), 10)
+            surf.blit(marker, (self.truepos[0], self.truepos[1]))
+
+
+    def set_highlight(self, bool_value):
+        self.highlighted = bool_value
+
+    def set_marked(self, bool_value):
+        self.marked = bool_value
+
     def set_piece(self, piece_object):
         self.piece = piece_object
+
+    def get_coords(self):
+        return self.coords
 
 
 class Piece:
@@ -48,6 +63,9 @@ class Piece:
 
     def draw(self, surf, x, y):
         surf.blit(self.image, (x, y))
+
+    def get_name(self):
+        return self.name
 
 
 class Spritesheet:
@@ -67,6 +85,6 @@ class Spritesheet:
         return image
 
     def get_sprite(self, x, y, w, h):
-        sprite = pygame.Surface((w, h), pygame.SRCALPHA, 32)  # Honestly not sure why this works, but it does.
+        sprite = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h))
         return sprite
