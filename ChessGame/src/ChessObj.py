@@ -47,7 +47,7 @@ while True:
                 selected_square.set_piece(dragging_piece)
                 if target_square in potential_squares:  # If dropping onto a potential move
                     selected_square, potential_squares = handle_moving(
-                        selected_square, target_square, spritesheet
+                        selected_square, target_square, spritesheet, win, clock
                     )
                 dragging_piece = None
             mousedown = False
@@ -56,7 +56,7 @@ while True:
             mousedown = True
             if target_square in potential_squares:  # If clicking on a potential move
                 selected_square, potential_squares = handle_moving(
-                    selected_square, target_square, spritesheet
+                    selected_square, target_square, spritesheet, win, clock
                 )
             elif target_square.piece:   # Otherwise, if selecting a new piece
                 selected_square, dragging_piece, potential_squares = select_new_square(
