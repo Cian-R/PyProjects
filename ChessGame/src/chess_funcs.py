@@ -66,55 +66,58 @@ def move_piece(start_square, end_square):
 
 
 def rec_add_squares(board_state, x, y, direction, colour, collected):
-    print("Recursion Start:", x, y, direction, colour, collected)
     xmod, ymod = directions[direction]
-    print(xmod, ymod)
     x += xmod
     y += ymod
-    print(x, y)
     if (x < 0) or (x > 7) or (y < 0) or (y > 7):
-        print("EDGEEEEE")
         return collected
     elif board_state[x][y].piece:
-        print("Piece")
         if board_state[x][y].piece.get_name()[0] != colour:
-            print("enemy!")
             collected.append(board_state[x][y])
         return collected
     else:
-        print("Recursion End:", x, y, direction)
         collected.append(board_state[x][y])
         collected = rec_add_squares(board_state, x, y, direction, colour, collected)
         return collected
 
 
 def get_moves(board_state, origin, piece_type):
-    print("==================Getting moves...", piece_type)
     x, y = origin
     response = []
     if piece_type == 'wpawn':
-        print("wpawn")
         if y == 6:
             response.append(board_state[x][y-2])
         response.append(board_state[x][y-1])
+    elif piece_type == 'bpawn':
+        if y == 1:
+            response.append(board_state[x][y+2])
+        response.append(board_state[x][y+1])
     elif piece_type[1:] == "bish":
-        print("bish")
         response += rec_add_squares(board_state, x, y, "upleft", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "upright", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "downleft", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "downright", piece_type[0], [])
     elif piece_type[1:] == "rook":
-        print("rook")
         response += rec_add_squares(board_state, x, y, "up", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "down", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "left", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "right", piece_type[0], [])
     elif piece_type[1:] == "quee":
-        print("quee")
         for key in directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
+    elif piece_type[1:] == "king":
+        for key in directions:
+            xmod, ymod = directions[key]
+            tempx = x + xmod
+            tempy = y + ymod
+            if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
+                pass
+            elif board_state[tempx][tempy].piece:
+                if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
+                    response.append(board_state[tempx][tempy])
+            else:
+                response.append(board_state[tempx][tempy])
     elif piece_type[1:] == "knig":
-        print("knig")
         for key in knight_directions:
             xmod, ymod = knight_directions[key]
             tempx = x + xmod
@@ -122,11 +125,9 @@ def get_moves(board_state, origin, piece_type):
             if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
                 pass
             elif board_state[tempx][tempy].piece:
-                print("Piece")
                 if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
-                    print("enemy!")
                     response.append(board_state[tempx][tempy])
             else:
                 response.append(board_state[tempx][tempy])
-    for e in response: print(e)
+
     return response

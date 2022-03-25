@@ -24,7 +24,7 @@ for board_x in range(8):
 # Fill board with pieces.
 board = fill_board(board, spritesheet)
 
-# ////////////////////////// Main ////////////////////////////////
+# /////////////////////////////////////////////////////// Main ///////////////////////////////////////////////////////
 selected_square = None
 potential_squares = []
 dragging_piece = None
@@ -64,10 +64,6 @@ while True:
                     select_new_square(selected_square, target_square, board_state=board)
             else:   # Else, if selecting a blank, unreachable square
                 selected_square, potential_squares = deselect_square(selected_square)
-
-            print(potential_squares)
-
-    # =========================================================
 
     # ==================== GRAPHICS DRAWING ====================
     win.fill(bg_colour)
