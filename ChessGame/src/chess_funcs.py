@@ -99,26 +99,33 @@ def get_moves(board_state, origin, piece_type):
     x, y = origin
     response = []
     if piece_type == 'wpawn':
-        if y == 6:
-            response.append(board_state[x][y-2])
-        response.append(board_state[x][y-1])
+        if not board_state[x][y - 1].piece:
+            response.append(board_state[x][y - 1])
+            if (y == 6) and (not board_state[x][y - 2].piece):
+                response.append(board_state[x][y - 2])
+
     elif piece_type == 'bpawn':
-        if y == 1:
-            response.append(board_state[x][y+2])
-        response.append(board_state[x][y+1])
+        if not board_state[x][y + 1].piece:
+            response.append(board_state[x][y + 1])
+            if (y == 1) and (not board_state[x][y + 2].piece):
+                response.append(board_state[x][y + 2])
+
     elif piece_type[1:] == "bish":
         response += rec_add_squares(board_state, x, y, "upleft", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "upright", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "downleft", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "downright", piece_type[0], [])
+
     elif piece_type[1:] == "rook":
         response += rec_add_squares(board_state, x, y, "up", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "down", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "left", piece_type[0], [])
         response += rec_add_squares(board_state, x, y, "right", piece_type[0], [])
+
     elif piece_type[1:] == "quee":
         for key in directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
+
     elif piece_type[1:] == "king":
         for key in directions:
             xmod, ymod = directions[key]
@@ -131,6 +138,7 @@ def get_moves(board_state, origin, piece_type):
                     response.append(board_state[tempx][tempy])
             else:
                 response.append(board_state[tempx][tempy])
+
     elif piece_type[1:] == "knig":
         for key in knight_directions:
             xmod, ymod = knight_directions[key]
