@@ -1,4 +1,4 @@
-from chess_classes import Piece
+from chess_classes import Piece, Square
 from chess_data import directions, knight_directions
 
 
@@ -36,7 +36,7 @@ def fill_board(board_list, spritesheet):
     return board_list
 
 
-def select_new_square(current, target, board_state):
+def select_new_square(current: Square, target: Square, board_state):
     if current: current.set_highlight(False)
 
     current = target
@@ -48,24 +48,38 @@ def select_new_square(current, target, board_state):
     return current, draggging, potential
 
 
-def deselect_square(selected):
-    if selected:
-        selected.set_highlight(False)
-    selected = None
+def deselect_square(current: Square):
+    if current:
+        current.set_highlight(False)
+    current = None
     movelist = []
-    return selected, movelist
+    return current, movelist
 
 
-def move_piece(start_square, end_square):
+def handle_moving(current: Square, target: Square, spritesheet):
+    if target.piece:  # If there's an enemy piece
+        pass
+    move_piece(current, target)
+    if target.piece.get_name()[1:] == "pawn":
+        if target.get_coords()[1] == 0:
+            promote_pawn(target, "w", spritesheet)
+        elif target.get_coords()[1] == 7:
+            promote_pawn(target, "b", spritesheet)
+    selected_square, potential_squares = deselect_square(current)
+    return selected_square, potential_squares
+
+
+def move_piece(start_square: Square, end_square: Square):
     end_square.set_piece(start_square.piece)
     start_square.set_piece(None)
 
 
-# def collision_check(board_list, x, y):
-#     pass
+def promote_pawn(pawn_square: Square, colour, spritesheet):
+    #  Probably render some sort fo selection box here :/
+    pawn_square.set_piece(Piece(f'{colour}quee', spritesheet.parse_sprite(f'{colour}quee')))
 
 
-def rec_add_squares(board_state, x, y, direction, colour, collected):
+def rec_add_squares(board_state, x, y, direction, colour, collected: list):
     xmod, ymod = directions[direction]
     x += xmod
     y += ymod
