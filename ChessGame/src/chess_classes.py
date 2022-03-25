@@ -59,7 +59,6 @@ class Piece:
     def __init__(self, name, image):
         self.name = name
         self.image = image.convert_alpha()
-        self.movelist = None  # TODO: Uhh, maybe using a json file?
 
     def draw(self, surf, x, y):
         surf.blit(self.image, (x, y))
