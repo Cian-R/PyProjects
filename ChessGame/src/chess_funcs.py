@@ -1,6 +1,6 @@
 import pygame
 import math
-from chess_classes import Piece, Square, Spritesheet
+from chess_classes import Piece, Square
 from chess_data import directions, knight_directions
 
 
