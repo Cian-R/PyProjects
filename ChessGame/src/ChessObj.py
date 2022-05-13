@@ -4,77 +4,90 @@ from chess_data import bg_colour
 from chess_funcs import (
     fill_board, select_new_square, deselect_square, handle_moving
 )
+from PodSixNet.Connection import ConnectionListener, connection
+from time import sleep
+
 
 # //////////////////////// Setup //////////////////////////////////////////////////////////////
 # Initialise pygame.
-pygame.init()
-win = pygame.display.set_mode((620, 620))
-pygame.display.set_caption('Chess')
-clock = pygame.time.Clock()
+class ChessGame(ConnectionListener):
+    def __init__(self):
+        pygame.init()
+        self.win = pygame.display.set_mode((620, 620))
+        pygame.display.set_caption('Chess')
+        self.clock = pygame.time.Clock()
 
-spritesheet = Spritesheet("src/Sprites/sprite_sheet.png")
+        self.spritesheet = Spritesheet("Sprites/sprite_sheet.png")
 
-# Initiate squares and fill board
-board = []
-for board_x in range(8):
-    row = []
-    for board_y in range(8):
-        new_square = Square((board_x + board_y) % 2 == 0, [board_x, board_y])
-        row.append(new_square)
-    board.append(row)
+        # Initiate squares and fill board
+        self.board = []
+        for board_x in range(8):
+            board_row = []
+            for board_y in range(8):
+                new_square = Square((board_x + board_y) % 2 == 0, [board_x, board_y])
+                board_row.append(new_square)
+            self.board.append(board_row)
 
-board = fill_board(board, spritesheet)
+        self.board = fill_board(self.board, self.spritesheet)
 
-# //////////////////////// Main ///////////////////////////////////////////////////////////////
-# Initialise values
-selected_square = None
-potential_squares = []
-dragging_piece = None
-mousedown = False
+        self.selected_square = None
+        self.potential_squares = []
+        self.dragging_piece = None
+        self.mousedown = False
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            quit()
-    # =========================================================================================
-    mouse = pygame.mouse.get_pos()
-    if (10 < mouse[0] < 610) and (10 < mouse[1] < 610):  # If mouse on the board...
-        click = pygame.mouse.get_pressed(3)[0]  # Get state of Mouse1
-        target_square = board[int((mouse[0] - 10) / 75)][int((mouse[1] - 10) / 75)]
+    def draw_board(self):
+        # ==================== GRAPHICS DRAWING ====================
+        mouse = pygame.mouse.get_pos()
+        self.win.fill(bg_colour)
+        for row in self.board:
+            for squareObj in row:
+                squareObj.set_marked(False)
+                if squareObj in self.potential_squares:
+                    squareObj.set_marked(True)
+                squareObj.draw(self.win)
+        if self.dragging_piece:
+            self.dragging_piece.draw(self.win, mouse[0] - 35, mouse[1] - 37)
+        # =========================================================
 
-        if not click:  # If mouse1 is up
-            if mousedown and selected_square:  # If unclicking
-                selected_square.set_piece(dragging_piece)
-                if target_square in potential_squares:  # If dropping onto a potential move
-                    selected_square, potential_squares = handle_moving(
-                        selected_square, target_square, spritesheet, win, clock
+    def update(self):
+        self.clock.tick(60)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+        mouse = pygame.mouse.get_pos()
+        if (10 < mouse[0] < 610) and (10 < mouse[1] < 610):  # If mouse on the board...
+            click = pygame.mouse.get_pressed(3)[0]  # Get state of Mouse1
+            target_square = self.board[int((mouse[0] - 10) / 75)][int((mouse[1] - 10) / 75)]
+
+            if not click:  # If mouse1 is up
+                if self.mousedown and self.selected_square:  # If unclicking
+                    self.selected_square.set_piece(self.dragging_piece)
+                    if target_square in self.potential_squares:  # If dropping onto a potential move
+                        self.selected_square, self.potential_squares = handle_moving(
+                            self.selected_square, target_square, self.spritesheet, self.win, self.clock
+                        )
+                    self.dragging_piece = None
+                self.mousedown = False
+
+            if click and (not self.mousedown):  # If clicking down
+                self.mousedown = True
+                if target_square in self.potential_squares:  # If clicking on a potential move
+                    self.selected_square, self.potential_squares = handle_moving(
+                        self.selected_square, target_square, self.spritesheet, self.win, self.clock
                     )
-                dragging_piece = None
-            mousedown = False
+                elif target_square.piece:  # Otherwise, if selecting a new piece
+                    self.selected_square, self.dragging_piece, self.potential_squares = select_new_square(
+                        self.selected_square, target_square, board_state=self.board
+                    )
+                else:  # Else, if selecting a blank, unreachable square
+                    self.selected_square, self.potential_squares = deselect_square(self.selected_square)
 
-        if click and (not mousedown):  # If clicking down
-            mousedown = True
-            if target_square in potential_squares:  # If clicking on a potential move
-                selected_square, potential_squares = handle_moving(
-                    selected_square, target_square, spritesheet, win, clock
-                )
-            elif target_square.piece:   # Otherwise, if selecting a new piece
-                selected_square, dragging_piece, potential_squares = select_new_square(
-                    selected_square, target_square, board_state=board
-                )
-            else:   # Else, if selecting a blank, unreachable square
-                selected_square, potential_squares = deselect_square(selected_square)
+        # Draw and update
+        self.draw_board()
+        pygame.display.flip()
 
-    # ==================== GRAPHICS DRAWING ====================
-    win.fill(bg_colour)
-    for row in board:
-        for squareObj in row:
-            squareObj.set_marked(False)
-            if squareObj in potential_squares:
-                squareObj.set_marked(True)
-            squareObj.draw(win)
-    if dragging_piece:
-        dragging_piece.draw(win, mouse[0]-35, mouse[1]-37)
-    # =========================================================
-    pygame.display.update()
-    clock.tick(60)
+
+game = ChessGame()
+while True:
+    game.update()
