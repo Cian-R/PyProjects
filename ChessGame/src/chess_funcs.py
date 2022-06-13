@@ -19,11 +19,15 @@ def render_board(surf, pieces, white_to_play):
     pygame.draw.rect(surf, (150, 150, 150), (620, 10, 200, 200))
     for i, pawn in enumerate(pieces[0][0]):
         pawn.draw(surf, 620 + (i * 18), 10)
+    for i, piece in enumerate(pieces[0][1:]):
+        piece.draw(surf, 620 + (i * 18), 110)
 
     # Render White Scoreboard
     pygame.draw.rect(surf, (150, 150, 150), (620, 410, 200, 200))
     for i, pawn in enumerate(pieces[1][0]):
         pawn.draw(surf, 620 + (i * 18), 410)
+    for i, piece in enumerate(pieces[1][1:]):
+        piece.draw(surf, 620 + (i * 18), 510)
 
 
 def fill_board(board_list, spritesheet):
