@@ -2,13 +2,13 @@ import pygame
 from chess_classes import Spritesheet, Square
 from chess_data import bg_colour
 from chess_funcs import (
-    fill_board, select_new_square, deselect_square, handle_moving
+    fill_board, select_new_square, deselect_square, handle_moving, render_board
 )
 
 # //////////////////////// Setup //////////////////////////////////////////////////////////////
 # Initialise pygame.
 pygame.init()
-win = pygame.display.set_mode((620, 620))
+win = pygame.display.set_mode((830, 620))
 pygame.display.set_caption('Chess')
 clock = pygame.time.Clock()
 
@@ -28,7 +28,12 @@ board = fill_board(board, spritesheet)
 # //////////////////////// Main ///////////////////////////////////////////////////////////////
 # Initialise values
 selected_square = None
+white_to_play = True
 potential_squares = []
+taken_pieces = [
+    [[]],
+    [[]]
+]
 dragging_piece = None
 mousedown = False
 
@@ -47,8 +52,9 @@ while True:
                 selected_square.set_piece(dragging_piece)
                 if target_square in potential_squares:  # If dropping onto a potential move
                     selected_square, potential_squares = handle_moving(
-                        selected_square, target_square, spritesheet, win, clock
+                        selected_square, target_square, spritesheet, win, clock, taken_pieces
                     )
+                    white_to_play = not white_to_play
                 dragging_piece = None
             mousedown = False
 
@@ -56,17 +62,19 @@ while True:
             mousedown = True
             if target_square in potential_squares:  # If clicking on a potential move
                 selected_square, potential_squares = handle_moving(
-                    selected_square, target_square, spritesheet, win, clock
+                    selected_square, target_square, spritesheet, win, clock, taken_pieces
                 )
+                white_to_play = not white_to_play
             elif target_square.piece:   # Otherwise, if selecting a new piece
                 selected_square, dragging_piece, potential_squares = select_new_square(
-                    selected_square, target_square, board_state=board
+                    white_to_play, selected_square, target_square, board_state=board
                 )
             else:   # Else, if selecting a blank, unreachable square
                 selected_square, potential_squares = deselect_square(selected_square)
 
     # ==================== GRAPHICS DRAWING ====================
     win.fill(bg_colour)
+    render_board(win, taken_pieces, white_to_play)
     for row in board:
         for squareObj in row:
             squareObj.set_marked(False)

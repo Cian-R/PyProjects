@@ -8,6 +8,24 @@ def rounddown(x):
     return int(math.floor(x / 75.0)) * 75
 
 
+def render_board(surf, pieces, white_to_play):
+    # Render Turn Indicator
+    if white_to_play:
+        pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))
+    else:
+        pygame.draw.rect(surf, (10, 10, 10), (616, 6, 208, 208))
+
+    # Render Black Scoreboard
+    pygame.draw.rect(surf, (150, 150, 150), (620, 10, 200, 200))
+    for i, pawn in enumerate(pieces[0][0]):
+        pawn.draw(surf, 620 + (i * 18), 10)
+
+    # Render White Scoreboard
+    pygame.draw.rect(surf, (150, 150, 150), (620, 410, 200, 200))
+    for i, pawn in enumerate(pieces[1][0]):
+        pawn.draw(surf, 620 + (i * 18), 410)
+
+
 def fill_board(board_list, spritesheet):
     for indx, valx in enumerate(board_list):
         for indy, valy in enumerate(valx):
@@ -42,8 +60,17 @@ def fill_board(board_list, spritesheet):
     return board_list
 
 
-def select_new_square(current: Square, target: Square, board_state):
-    if current: current.set_highlight(False)
+def select_new_square(white_to_play, current: Square, target: Square, board_state):
+    if current:
+        current.set_highlight(False)
+
+    target_is_white = target.piece.get_name()[0] == "w"
+    if (
+            (target_is_white and (not white_to_play))
+            or
+            ((not target_is_white) and white_to_play)
+    ):
+        return None, None, []
 
     current = target
     current.set_highlight(True)
@@ -62,9 +89,20 @@ def deselect_square(current: Square):
     return current, movelist
 
 
-def handle_moving(current: Square, target: Square, spritesheet, surface, clock):
+def handle_moving(current: Square, target: Square, spritesheet, surface, clock, collected):
     if target.piece:  # If there's an enemy piece
-        pass  # This will be for piece collection.
+        piece_name = target.piece.get_name()
+        if piece_name[0] == "w":
+            if piece_name[1:] == "pawn":
+                collected[0][0].append(target.piece)
+            else:
+                collected[0].append(target.piece)
+        else:
+            if piece_name[1:] == "pawn":
+                collected[1][0].append(target.piece)
+            else:
+                collected[1].append(target.piece)
+
     move_piece(current, target)
     if target.piece.get_name()[1:] == "pawn":
         if target.get_coords()[1] == 0:
