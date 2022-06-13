@@ -1,7 +1,7 @@
 import pygame
 import math
 from chess_classes import Piece, Square, Spritesheet
-from chess_data import directions, knight_directions
+from chess_data import all_directions, knight_directions
 
 
 def rounddown(x):
@@ -161,7 +161,7 @@ def promote_pawn(pawn_square: Square, colour, spritesheet, surface, clock):
 
 
 def rec_add_squares(board_state, x, y, direction, colour, collected: list):
-    xmod, ymod = directions[direction]
+    xmod, ymod = all_directions[direction]
     x += xmod
     y += ymod
     if (x < 0) or (x > 7) or (y < 0) or (y > 7):
@@ -179,6 +179,7 @@ def rec_add_squares(board_state, x, y, direction, colour, collected: list):
 def get_moves(board_state, origin, piece_type):
     x, y = origin
     response = []
+    set_directions = {}
     if piece_type == 'wpawn':
         if not board_state[x][y - 1].piece:
             response.append(board_state[x][y - 1])
@@ -200,45 +201,33 @@ def get_moves(board_state, origin, piece_type):
                     response.append(board_state[x + mod][y + 1])
 
     elif piece_type[1:] == "bish":
-        response += rec_add_squares(board_state, x, y, "upleft", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "upright", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "downleft", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "downright", piece_type[0], [])
+        for direction_name in list(all_directions.keys())[4:]:
+            response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "rook":
-        response += rec_add_squares(board_state, x, y, "up", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "down", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "left", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "right", piece_type[0], [])
+        for direction_name in list(all_directions.keys())[:4]:
+            response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "quee":
-        for key in directions:
+        for key in all_directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
 
     elif piece_type[1:] == "king":
-        for key in directions:
-            xmod, ymod = directions[key]
-            tempx = x + xmod
-            tempy = y + ymod
-            if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
-                pass
-            elif board_state[tempx][tempy].piece:
-                if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
-                    response.append(board_state[tempx][tempy])
-            else:
-                response.append(board_state[tempx][tempy])
+        set_directions = all_directions
 
     elif piece_type[1:] == "knig":
-        for key in knight_directions:
-            xmod, ymod = knight_directions[key]
-            tempx = x + xmod
-            tempy = y + ymod
-            if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
-                pass
-            elif board_state[tempx][tempy].piece:
-                if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
-                    response.append(board_state[tempx][tempy])
-            else:
+        set_directions = knight_directions
+
+    for key in set_directions:
+        xmod, ymod = set_directions[key]
+        tempx = x + xmod
+        tempy = y + ymod
+        if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
+            pass
+        elif board_state[tempx][tempy].piece:
+            if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
                 response.append(board_state[tempx][tempy])
+        else:
+            response.append(board_state[tempx][tempy])
 
     return response

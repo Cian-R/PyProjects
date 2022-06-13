@@ -8,7 +8,7 @@ fonts = {  # Potential future use in a UI
     "bfont": pygame.font.SysFont('lucidaconsole', 40)
 }
 
-directions = {
+all_directions = {
     "up": [0, -1],
     "down": [0, 1],
     "left": [-1, 0],
