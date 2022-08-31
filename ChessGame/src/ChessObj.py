@@ -11,7 +11,7 @@ from time import sleep
 # //////////////////////// Setup //////////////////////////////////////////////////////////////
 # Initialise pygame.
 class ChessGame(ConnectionListener):
-    def __init__(self):
+    def __init__(self, host, port):
         pygame.init()
         self.win = pygame.display.set_mode((620, 620))
         pygame.display.set_caption('Chess')
@@ -35,6 +35,8 @@ class ChessGame(ConnectionListener):
         self.dragging_piece = None
         self.mousedown = False
 
+        self.Connect((host, port))
+
     def draw_board(self):
         # ==================== GRAPHICS DRAWING ====================
         mouse = pygame.mouse.get_pos()
@@ -51,6 +53,8 @@ class ChessGame(ConnectionListener):
 
     def update(self):
         self.clock.tick(60)
+        connection.Pump()
+        self.Pump()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -87,7 +91,11 @@ class ChessGame(ConnectionListener):
         self.draw_board()
         pygame.display.flip()
 
+    @staticmethod
+    def Network(data):
+        print(data)
 
-game = ChessGame()
+
+game = ChessGame('localhost', 1337)
 while True:
     game.update()
