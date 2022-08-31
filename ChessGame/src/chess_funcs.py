@@ -1,11 +1,33 @@
 import pygame
 import math
-from chess_classes import Piece, Square
+from chess_classes import Piece, Square, Spritesheet
 from chess_data import directions, knight_directions
 
 
 def rounddown(x):
     return int(math.floor(x / 75.0)) * 75
+
+
+def render_board(surf, pieces, white_to_play):
+    # Render Turn Indicator
+    if white_to_play:
+        pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))
+    else:
+        pygame.draw.rect(surf, (10, 10, 10), (616, 6, 208, 208))
+
+    # Render Black Scoreboard
+    pygame.draw.rect(surf, (150, 150, 150), (620, 10, 200, 200))
+    for i, pawn in enumerate(pieces[0][0]):
+        pawn.draw(surf, 620 + (i * 18), 10)
+    for i, piece in enumerate(pieces[0][1:]):
+        piece.draw(surf, 620 + (i * 18), 110)
+
+    # Render White Scoreboard
+    pygame.draw.rect(surf, (150, 150, 150), (620, 410, 200, 200))
+    for i, pawn in enumerate(pieces[1][0]):
+        pawn.draw(surf, 620 + (i * 18), 410)
+    for i, piece in enumerate(pieces[1][1:]):
+        piece.draw(surf, 620 + (i * 18), 510)
 
 
 def fill_board(board_list, spritesheet):
@@ -42,8 +64,17 @@ def fill_board(board_list, spritesheet):
     return board_list
 
 
-def select_new_square(current: Square, target: Square, board_state):
-    if current: current.set_highlight(False)
+def select_new_square(white_to_play, current: Square, target: Square, board_state):
+    if current:
+        current.set_highlight(False)
+
+    target_is_white = target.piece.get_name()[0] == "w"
+    if (
+            (target_is_white and (not white_to_play))
+            or
+            ((not target_is_white) and white_to_play)
+    ):
+        return None, None, []
 
     current = target
     current.set_highlight(True)
@@ -62,9 +93,20 @@ def deselect_square(current: Square):
     return current, movelist
 
 
-def handle_moving(current: Square, target: Square, spritesheet, surface, clock):
+def handle_moving(current: Square, target: Square, spritesheet, surface, clock, collected):
     if target.piece:  # If there's an enemy piece
-        pass  # This will be for piece collection.
+        piece_name = target.piece.get_name()
+        if piece_name[0] == "w":
+            if piece_name[1:] == "pawn":
+                collected[0][0].append(target.piece)
+            else:
+                collected[0].append(target.piece)
+        else:
+            if piece_name[1:] == "pawn":
+                collected[1][0].append(target.piece)
+            else:
+                collected[1].append(target.piece)
+
     move_piece(current, target)
     if target.piece.get_name()[1:] == "pawn":
         if target.get_coords()[1] == 0:
@@ -141,6 +183,7 @@ def rec_add_squares(board_state, x, y, direction, colour, collected: list):
 def get_moves(board_state, origin, piece_type):
     x, y = origin
     response = []
+    set_directions = {}
     if piece_type == 'wpawn':
         if not board_state[x][y - 1].piece:
             response.append(board_state[x][y - 1])
@@ -162,45 +205,33 @@ def get_moves(board_state, origin, piece_type):
                     response.append(board_state[x + mod][y + 1])
 
     elif piece_type[1:] == "bish":
-        response += rec_add_squares(board_state, x, y, "upleft", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "upright", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "downleft", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "downright", piece_type[0], [])
+        for direction_name in list(directions.keys())[4:]:
+            response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "rook":
-        response += rec_add_squares(board_state, x, y, "up", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "down", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "left", piece_type[0], [])
-        response += rec_add_squares(board_state, x, y, "right", piece_type[0], [])
+        for direction_name in list(directions.keys())[:4]:
+            response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "quee":
         for key in directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
 
     elif piece_type[1:] == "king":
-        for key in directions:
-            xmod, ymod = directions[key]
-            tempx = x + xmod
-            tempy = y + ymod
-            if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
-                pass
-            elif board_state[tempx][tempy].piece:
-                if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
-                    response.append(board_state[tempx][tempy])
-            else:
-                response.append(board_state[tempx][tempy])
+        set_directions = directions
 
     elif piece_type[1:] == "knig":
-        for key in knight_directions:
-            xmod, ymod = knight_directions[key]
-            tempx = x + xmod
-            tempy = y + ymod
-            if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
-                pass
-            elif board_state[tempx][tempy].piece:
-                if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
-                    response.append(board_state[tempx][tempy])
-            else:
+        set_directions = knight_directions
+
+    for key in set_directions:
+        xmod, ymod = set_directions[key]
+        tempx = x + xmod
+        tempy = y + ymod
+        if (tempx < 0) or (tempx > 7) or (tempy < 0) or (tempy > 7):
+            pass
+        elif board_state[tempx][tempy].piece:
+            if board_state[tempx][tempy].piece.get_name()[0] != piece_type[0]:
                 response.append(board_state[tempx][tempy])
+        else:
+            response.append(board_state[tempx][tempy])
 
     return response
