@@ -2,7 +2,7 @@ import pygame
 from chess_classes import Spritesheet, Square
 from chess_data import bg_colour
 from chess_funcs import (
-    fill_board, select_new_square, deselect_square, handle_moving, render_board
+    fill_board, select_new_square, deselect_square, handle_moving, render_scoreboard
 )
 
 # //////////////////////// Setup //////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ while True:
 
     # ==================== GRAPHICS DRAWING ====================
     win.fill(bg_colour)
-    render_board(win, taken_pieces, white_to_play)
+    render_scoreboard(win, taken_pieces, white_to_play)
     for row in board:
         for squareObj in row:
             squareObj.set_marked(False)
@@ -82,7 +82,7 @@ while True:
                 squareObj.set_marked(True)
             squareObj.draw(win)
     if dragging_piece:
-        dragging_piece.draw(win, mouse[0]-35, mouse[1]-37)
+        dragging_piece.draw(win, mouse[0] - 35, mouse[1] - 37)
     # =========================================================
     pygame.display.update()
     clock.tick(60)

@@ -8,7 +8,7 @@ def rounddown(x):
     return int(math.floor(x / 75.0)) * 75
 
 
-def render_board(surf, pieces, white_to_play):
+def render_scoreboard(surf, pieces, white_to_play):
     # Render Turn Indicator
     if white_to_play:
         pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))
@@ -108,11 +108,13 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
                 collected[1].append(target.piece)
 
     move_piece(current, target)
+
     if target.piece.get_name()[1:] == "pawn":
         if target.get_coords()[1] == 0:
             promote_pawn(target, "w", spritesheet, surface, clock)
         elif target.get_coords()[1] == 7:
             promote_pawn(target, "b", spritesheet, surface, clock)
+
     selected_square, potential_squares = deselect_square(current)
     return selected_square, potential_squares
 
@@ -120,6 +122,7 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
 def move_piece(start_square: Square, end_square: Square):
     end_square.set_piece(start_square.piece)
     start_square.set_piece(None)
+
 
 
 def promote_pawn(pawn_square: Square, colour, spritesheet, surface, clock):
