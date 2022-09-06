@@ -2,7 +2,7 @@ import pygame
 from chess_classes import Spritesheet, Square
 from chess_data import bg_colour
 from chess_funcs import (
-    fill_board, select_new_square, deselect_square, handle_moving
+    fill_board, select_new_square, deselect_square, handle_moving, render_board
 )
 from PodSixNet.Connection import ConnectionListener, connection
 from time import sleep
@@ -13,7 +13,7 @@ from time import sleep
 class ChessGame(ConnectionListener):
     def __init__(self, host, port):
         pygame.init()
-        self.win = pygame.display.set_mode((620, 620))
+        self.win = pygame.display.set_mode((830, 620))
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
 
@@ -31,7 +31,12 @@ class ChessGame(ConnectionListener):
         self.board = fill_board(self.board, self.spritesheet)
 
         self.selected_square = None
+        self.white_to_play = True
         self.potential_squares = []
+        self.taken_pieces = [
+            [[]],
+            [[]]
+        ]
         self.dragging_piece = None
         self.mousedown = False
 
@@ -41,6 +46,7 @@ class ChessGame(ConnectionListener):
         # ==================== GRAPHICS DRAWING ====================
         mouse = pygame.mouse.get_pos()
         self.win.fill(bg_colour)
+        render_board(self.win, self.taken_pieces, self.white_to_play)
         for row in self.board:
             for squareObj in row:
                 squareObj.set_marked(False)
@@ -69,8 +75,10 @@ class ChessGame(ConnectionListener):
                     self.selected_square.set_piece(self.dragging_piece)
                     if target_square in self.potential_squares:  # If dropping onto a potential move
                         self.selected_square, self.potential_squares = handle_moving(
-                            self.selected_square, target_square, self.spritesheet, self.win, self.clock
+                            self.selected_square, target_square, self.spritesheet,
+                            self.win, self.clock, self.taken_pieces
                         )
+                        self.white_to_play = not self.white_to_play
                     self.dragging_piece = None
                 self.mousedown = False
 
@@ -78,11 +86,13 @@ class ChessGame(ConnectionListener):
                 self.mousedown = True
                 if target_square in self.potential_squares:  # If clicking on a potential move
                     self.selected_square, self.potential_squares = handle_moving(
-                        self.selected_square, target_square, self.spritesheet, self.win, self.clock
+                        self.selected_square, target_square, self.spritesheet,
+                        self.win, self.clock, self.taken_pieces
                     )
+                    self.white_to_play = not self.white_to_play
                 elif target_square.piece:  # Otherwise, if selecting a new piece
                     self.selected_square, self.dragging_piece, self.potential_squares = select_new_square(
-                        self.selected_square, target_square, board_state=self.board
+                        self.white_to_play, self.selected_square, target_square, board_state=self.board
                     )
                 else:  # Else, if selecting a blank, unreachable square
                     self.selected_square, self.potential_squares = deselect_square(self.selected_square)
