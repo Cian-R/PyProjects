@@ -1,7 +1,7 @@
 import pygame
 import math
 from chess_classes import Piece, Square, Spritesheet
-from chess_data import all_directions, knight_directions
+from chess_data import directions, knight_directions
 
 
 def rounddown(x):
@@ -168,7 +168,7 @@ def promote_pawn(pawn_square: Square, colour, spritesheet, surface, clock):
 
 
 def rec_add_squares(board_state, x, y, direction, colour, collected: list):
-    xmod, ymod = all_directions[direction]
+    xmod, ymod = directions[direction]
     x += xmod
     y += ymod
     if (x < 0) or (x > 7) or (y < 0) or (y > 7):
@@ -208,19 +208,19 @@ def get_moves(board_state, origin, piece_type):
                     response.append(board_state[x + mod][y + 1])
 
     elif piece_type[1:] == "bish":
-        for direction_name in list(all_directions.keys())[4:]:
+        for direction_name in list(directions.keys())[4:]:
             response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "rook":
-        for direction_name in list(all_directions.keys())[:4]:
+        for direction_name in list(directions.keys())[:4]:
             response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "quee":
-        for key in all_directions:
+        for key in directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
 
     elif piece_type[1:] == "king":
-        set_directions = all_directions
+        set_directions = directions
 
     elif piece_type[1:] == "knig":
         set_directions = knight_directions
