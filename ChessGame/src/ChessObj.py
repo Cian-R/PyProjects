@@ -46,7 +46,7 @@ class ChessGame(ConnectionListener):
         # ==================== GRAPHICS DRAWING ====================
         mouse = pygame.mouse.get_pos()
         self.win.fill(bg_colour)
-        render_board(self.win, self.taken_pieces, self.white_to_play)
+        render_scoreboard(self.win, self.taken_pieces, self.white_to_play)
         for row in self.board:
             for squareObj in row:
                 squareObj.set_marked(False)
