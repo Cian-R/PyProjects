@@ -17,7 +17,7 @@ class ChessGame(ConnectionListener):
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
 
-        self.spritesheet = Spritesheet("Sprites/sprite_sheet.png")
+        self.spritesheet = Spritesheet('Sprites/sprite_sheet.png')
 
         # Initiate squares and fill board
         self.board = []

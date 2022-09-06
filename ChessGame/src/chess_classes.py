@@ -83,6 +83,7 @@ class Spritesheet:
         image = self.get_sprite(x, y, w, h)
         return image
 
+    # noinspection PyTypeChecker
     def get_sprite(self, x, y, w, h):
         sprite = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h))

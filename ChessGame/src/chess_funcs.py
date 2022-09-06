@@ -1,6 +1,6 @@
 import pygame
 import math
-from chess_classes import Piece, Square, Spritesheet
+from chess_classes import Piece, Square
 from chess_data import directions, knight_directions
 
 
@@ -55,11 +55,6 @@ def fill_board(board_list, spritesheet):
     board_list[5][7].set_piece(Piece('wbish', spritesheet.parse_sprite('wbish')))
     board_list[6][7].set_piece(Piece('wknig', spritesheet.parse_sprite('wknig')))
     board_list[7][7].set_piece(Piece('wrook', spritesheet.parse_sprite('wrook')))
-
-    # board_list[3][2].set_piece(Piece('wpawn', spritesheet.parse_sprite('wpawn')))
-    # board_list[4][4].set_piece(Piece('wquee', spritesheet.parse_sprite('wquee')))
-    # board_list[4][3].set_piece(Piece('wknig', spritesheet.parse_sprite('wknig')))
-    # board_list[6][4].set_piece(Piece('wbish', spritesheet.parse_sprite('wbish')))
 
     return board_list
 
