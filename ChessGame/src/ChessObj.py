@@ -16,6 +16,8 @@ class ChessGame(ConnectionListener):
         self.win = pygame.display.set_mode((830, 620))
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
+        self.gameid = None
+        self.num = None
 
         self.spritesheet = Spritesheet('Sprites/sprite_sheet.png')
 
@@ -41,6 +43,37 @@ class ChessGame(ConnectionListener):
         self.mousedown = False
 
         self.Connect((host, port))
+
+        self.running = False
+        while not self.running:
+            self.Pump()
+            connection.Pump()
+            sleep(0.01)
+        # determine attributes from player #
+        if self.num == 0:
+            self.turn = True
+            # self.marker = self.greenplayer
+            # self.othermarker = self.blueplayer
+        else:
+            self.turn = False
+            # self.marker = self.blueplayer
+            # self.othermarker = self.greenplayer
+
+    def Network_startgame(self, data):
+        self.running = True
+        self.num = data["player"]
+        self.gameid = data["gameid"]
+
+    def Network_place(self, data):  # TODO
+        # get attributes
+        x = data["x"]
+        y = data["y"]
+        hv = data["is_horizontal"]
+        # horizontal or vertical
+        if hv:
+            self.boardh[y][x] = True
+        else:
+            self.boardv[y][x] = True
 
     def draw_board(self):
         # ==================== GRAPHICS DRAWING ====================
@@ -78,6 +111,7 @@ class ChessGame(ConnectionListener):
                             self.selected_square, target_square, self.spritesheet,
                             self.win, self.clock, self.taken_pieces
                         )
+                        self.Send("%s moved." % ("White" if self.white_to_play else "Black"))
                         self.white_to_play = not self.white_to_play
                     self.dragging_piece = None
                 self.mousedown = False
@@ -89,6 +123,7 @@ class ChessGame(ConnectionListener):
                         self.selected_square, target_square, self.spritesheet,
                         self.win, self.clock, self.taken_pieces
                     )
+                    self.Send({'string': "%s moved." % ("White" if self.white_to_play else "Black")})
                     self.white_to_play = not self.white_to_play
                 elif target_square.piece:  # Otherwise, if selecting a new piece
                     self.selected_square, self.dragging_piece, self.potential_squares = select_new_square(
