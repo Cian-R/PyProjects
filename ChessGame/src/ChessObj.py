@@ -49,13 +49,16 @@ class ChessGame(ConnectionListener):
             self.Pump()
             connection.Pump()
             sleep(0.01)
+        #
         # determine attributes from player #
         if self.num == 0:
             self.turn = True
+            self.playingWhite = True
             # self.marker = self.greenplayer
             # self.othermarker = self.blueplayer
         else:
             self.turn = False
+            self.playingWhite = False
             # self.marker = self.blueplayer
             # self.othermarker = self.greenplayer
 
@@ -63,23 +66,24 @@ class ChessGame(ConnectionListener):
         self.running = True
         self.num = data["player"]
         self.gameid = data["gameid"]
+        print("Multiplayer game has started!")
 
-    def Network_place(self, data):  # TODO
-        # get attributes
-        x = data["x"]
-        y = data["y"]
-        hv = data["is_horizontal"]
-        # horizontal or vertical
-        if hv:
-            self.boardh[y][x] = True
-        else:
-            self.boardv[y][x] = True
+    # def Network_place(self, data):  # TODO
+    #     # get attributes
+    #     x = data["x"]
+    #     y = data["y"]
+    #     hv = data["is_horizontal"]
+    #     # horizontal or vertical
+    #     if hv:
+    #         self.boardh[y][x] = True
+    #     else:
+    #         self.boardv[y][x] = True
 
     def draw_board(self):
         # ==================== GRAPHICS DRAWING ====================
         mouse = pygame.mouse.get_pos()
         self.win.fill(bg_colour)
-        render_scoreboard(self.win, self.taken_pieces, self.white_to_play)
+        render_scoreboard(self.win, self.taken_pieces, self.white_to_play, self.playingWhite, self.turn)
         for row in self.board:
             for squareObj in row:
                 squareObj.set_marked(False)
@@ -141,6 +145,6 @@ class ChessGame(ConnectionListener):
         print(data)
 
 
-game = ChessGame('localhost', 1337)
+game = ChessGame('localhost', 8001)
 while True:
     game.update()

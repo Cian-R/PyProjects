@@ -1,14 +1,18 @@
 import pygame
 import math
 from chess_classes import Piece, Square
-from chess_data import directions, knight_directions
+from chess_data import directions, fonts, knight_directions
 
 
 def rounddown(x):
     return int(math.floor(x / 75.0)) * 75
 
 
-def render_scoreboard(surf, pieces, white_to_play):
+def render_scoreboard(surf, pieces, white_to_play, playing_white, turn):
+    if playing_white:
+        surf.blit(fonts['selecfont'].render("You are white", False, (0, 0, 0)), (616, 306))
+    else:
+        surf.blit(fonts['selecfont'].render("You are black", False, (0, 0, 0)), (616, 306))
     # Render Turn Indicator
     if white_to_play:
         pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))

@@ -90,7 +90,7 @@ class Game:
 
 
 print("STARTING SERVER ON LOCALHOST")
-chess_server = ChessServer(localaddr=('localhost', 1337))
+chess_server = ChessServer(localaddr=('localhost', 8001))
 while True:
     chess_server.Pump()
     sleep(0.01)
