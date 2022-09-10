@@ -37,6 +37,10 @@ def render_scoreboard(surf, pieces, white_to_play, playing_white, turn):
         piece.draw(surf, 620 + (i * 18), 510)
 
 
+def render_waiting_screen(surf, val):
+    surf.blit(fonts['bfont'].render("Waiting on another player...", False, (val, val, val)), (80, 200))
+
+
 def fill_board(board_list, spritesheet):
     for indx, valx in enumerate(board_list):
         for indy, valy in enumerate(valx):
@@ -94,6 +98,7 @@ def deselect_square(current: Square):
     movelist = []
     return current, movelist
 
+
 def end_move(current: Square):
     if current:
         current.set_highlight(False)
@@ -145,7 +150,6 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
 def move_piece(start_square: Square, end_square: Square):
     end_square.set_piece(start_square.piece)
     start_square.set_piece(None)
-
 
 
 def promote_pawn(pawn_square: Square, colour, spritesheet, surface, clock):

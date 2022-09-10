@@ -2,7 +2,7 @@ import pygame
 from chess_classes import Spritesheet, Square, Piece
 from chess_data import bg_colour
 from chess_funcs import (
-    fill_board, select_new_square, deselect_square, handle_moving, render_scoreboard
+    fill_board, select_new_square, deselect_square, handle_moving, render_scoreboard, render_waiting_screen
 )
 from PodSixNet.Connection import ConnectionListener, connection
 from time import sleep
@@ -45,7 +45,16 @@ class ChessGame(ConnectionListener):
         self.Connect((host, port))
 
         self.running = False
+        temp_val = 50
+        modifier = 1
         while not self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+            render_waiting_screen(self.win, temp_val)
+            temp_val += 2 * modifier
+            if (temp_val == 250) or (temp_val == 50): modifier = modifier * -1
+            pygame.display.flip()
             self.Pump()
             connection.Pump()
             sleep(0.01)
@@ -60,11 +69,13 @@ class ChessGame(ConnectionListener):
 
     @staticmethod
     def Network_disconnected(data):
+        print(data)
         print("======================================")
         print("The game server appears to be offline.")
         print("             Closing game.            ")
         print("======================================")
         quit()
+
 
     def Network_startgame(self, data):
         print("Multiplayer game has started!")
@@ -199,7 +210,7 @@ class ChessGame(ConnectionListener):
 
     @staticmethod
     def Network(data):
-        print("~~~Incoming data- ", data)
+        print("~Incoming data- ", data)
 
 
 game = ChessGame('localhost', 8001)
