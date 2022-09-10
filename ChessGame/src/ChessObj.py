@@ -58,6 +58,14 @@ class ChessGame(ConnectionListener):
             self.playingWhite = False
 
 
+    @staticmethod
+    def Network_disconnected(data):
+        print("======================================")
+        print("The game server appears to be offline.")
+        print("             Closing game.            ")
+        print("======================================")
+        quit()
+
     def Network_startgame(self, data):
         print("Multiplayer game has started!")
         self.running = True
@@ -191,7 +199,7 @@ class ChessGame(ConnectionListener):
 
     @staticmethod
     def Network(data):
-        print("~~~Incoming - ", data)
+        print("~~~Incoming data- ", data)
 
 
 game = ChessGame('localhost', 8001)
