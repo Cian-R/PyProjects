@@ -49,35 +49,26 @@ class ChessGame(ConnectionListener):
             self.Pump()
             connection.Pump()
             sleep(0.01)
-        #
-        # determine attributes from player #
+
         if self.num == 0:
             self.turn = True
             self.playingWhite = True
-            # self.marker = self.greenplayer
-            # self.othermarker = self.blueplayer
         else:
             self.turn = False
             self.playingWhite = False
-            # self.marker = self.blueplayer
-            # self.othermarker = self.greenplayer
+
 
     def Network_startgame(self, data):
+        print("Multiplayer game has started!")
         self.running = True
         self.num = data["player"]
         self.gameid = data["gameid"]
-        print("Multiplayer game has started!")
 
-    # def Network_place(self, data):  # TODO
-    #     # get attributes
-    #     x = data["x"]
-    #     y = data["y"]
-    #     hv = data["is_horizontal"]
-    #     # horizontal or vertical
-    #     if hv:
-    #         self.boardh[y][x] = True
-    #     else:
-    #         self.boardv[y][x] = True
+
+    def Network_boardupdate(self, data):  # TODO
+        print("Detected move data")
+        # get attributes
+
 
     def draw_board(self):
         # ==================== GRAPHICS DRAWING ====================
@@ -93,6 +84,7 @@ class ChessGame(ConnectionListener):
         if self.dragging_piece:
             self.dragging_piece.draw(self.win, mouse[0] - 35, mouse[1] - 37)
         # =========================================================
+
 
     def update(self):
         self.clock.tick(60)
@@ -115,7 +107,7 @@ class ChessGame(ConnectionListener):
                             self.selected_square, target_square, self.spritesheet,
                             self.win, self.clock, self.taken_pieces
                         )
-                        self.Send("%s moved." % ("White" if self.white_to_play else "Black"))
+                        self.Send({"action": "move", "num": self.num, "board": "board", "gameid": self.gameid})  # TODO
                         self.white_to_play = not self.white_to_play
                     self.dragging_piece = None
                 self.mousedown = False
@@ -127,7 +119,7 @@ class ChessGame(ConnectionListener):
                         self.selected_square, target_square, self.spritesheet,
                         self.win, self.clock, self.taken_pieces
                     )
-                    self.Send({'string': "%s moved." % ("White" if self.white_to_play else "Black")})
+                    self.Send({"action": "move", "num": self.num, "board": "board", "gameid": self.gameid})  # TODO
                     self.white_to_play = not self.white_to_play
                 elif target_square.piece:  # Otherwise, if selecting a new piece
                     self.selected_square, self.dragging_piece, self.potential_squares = select_new_square(
@@ -139,6 +131,7 @@ class ChessGame(ConnectionListener):
         # Draw and update
         self.draw_board()
         pygame.display.flip()
+
 
     @staticmethod
     def Network(data):
