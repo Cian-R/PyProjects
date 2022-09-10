@@ -1,5 +1,6 @@
 import pygame
 import math
+from copy import copy
 from chess_classes import Piece, Square
 from chess_data import directions, fonts, knight_directions
 
@@ -13,6 +14,8 @@ def render_scoreboard(surf, pieces, white_to_play, playing_white, turn):
         surf.blit(fonts['selecfont'].render("You are white", False, (0, 0, 0)), (616, 306))
     else:
         surf.blit(fonts['selecfont'].render("You are black", False, (0, 0, 0)), (616, 306))
+    if turn:
+        surf.blit(fonts['selecfont'].render("Your Turn!", False, (50, 200, 50)), (616, 336))
     # Render Turn Indicator
     if white_to_play:
         pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))
@@ -91,9 +94,17 @@ def deselect_square(current: Square):
     movelist = []
     return current, movelist
 
+def end_move(current: Square):
+    if current:
+        current.set_highlight(False)
+    movelist = []
+    return current, movelist
+
 
 def handle_moving(current: Square, target: Square, spritesheet, surface, clock, collected):
     if target.piece:  # If there's an enemy piece
+        event = "take"
+        temp_square = copy(target)
         piece_name = target.piece.get_name()
         if piece_name[0] == "w":
             if piece_name[1:] == "pawn":
@@ -105,8 +116,21 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
                 collected[1][0].append(target.piece)
             else:
                 collected[1].append(target.piece)
+    else:
+        event = "move"
+        temp_square = None
 
-    move_piece(current, target)
+    print("Moving piece \n",
+          current, "\n",
+          target)
+    move_piece(current, target)  # Override end piece with the moving piece.
+
+    print("Temp square:", temp_square)
+    if temp_square:
+        print("Moving piece \n",
+              temp_square, "\n",
+              current)
+        move_piece(temp_square, current)  # Override origin square with taken piece (for multiplayer functionality).
 
     if target.piece.get_name()[1:] == "pawn":
         if target.get_coords()[1] == 0:
@@ -114,8 +138,8 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
         elif target.get_coords()[1] == 7:
             promote_pawn(target, "b", spritesheet, surface, clock)
 
-    selected_square, potential_squares = deselect_square(current)
-    return selected_square, potential_squares
+    selected_square, potential_squares = end_move(current)
+    return potential_squares, event
 
 
 def move_piece(start_square: Square, end_square: Square):

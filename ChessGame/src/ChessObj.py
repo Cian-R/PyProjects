@@ -1,5 +1,5 @@
 import pygame
-from chess_classes import Spritesheet, Square
+from chess_classes import Spritesheet, Square, Piece
 from chess_data import bg_colour
 from chess_funcs import (
     fill_board, select_new_square, deselect_square, handle_moving, render_scoreboard
@@ -67,7 +67,35 @@ class ChessGame(ConnectionListener):
 
     def Network_boardupdate(self, data):  # TODO
         print("Detected move data")
-        # get attributes
+        self.turn = True
+        self.white_to_play = not self.white_to_play
+        
+        start_coords = data["start_coords"]
+        end_coords = data["end_coords"]
+        start_piece = data["start_piece"]
+        end_piece = data["end_piece"]
+        event = data["event"]
+
+        self.board[end_coords[0]][end_coords[1]].set_piece(Piece(end_piece,
+                                                                 self.spritesheet.parse_sprite(end_piece)))
+
+
+        if start_piece:
+            if event == "take":
+                taken_piece = Piece(start_piece, self.spritesheet.parse_sprite(start_piece))
+                if start_piece[0] == "w":
+                    if start_piece[1:] == "pawn":
+                        self.taken_pieces[0][0].append(taken_piece)
+                    else:
+                        self.taken_pieces[0].append(taken_piece)
+                else:
+                    if start_piece[1:] == "pawn":
+                        self.taken_pieces[1][0].append(taken_piece)
+                    else:
+                        self.taken_pieces[1].append(taken_piece)
+                self.board[start_coords[0]][start_coords[1]].set_piece(None)
+        else:
+            self.board[start_coords[0]][start_coords[1]].set_piece(None)
 
 
     def draw_board(self):
@@ -95,7 +123,7 @@ class ChessGame(ConnectionListener):
             if event.type == pygame.QUIT:
                 exit()
         mouse = pygame.mouse.get_pos()
-        if (10 < mouse[0] < 610) and (10 < mouse[1] < 610):  # If mouse on the board...
+        if (10 < mouse[0] < 610) and (10 < mouse[1] < 610) and self.turn:  # If mouse on the board...
             click = pygame.mouse.get_pressed(3)[0]  # Get state of Mouse1
             target_square = self.board[int((mouse[0] - 10) / 75)][int((mouse[1] - 10) / 75)]
 
@@ -103,24 +131,52 @@ class ChessGame(ConnectionListener):
                 if self.mousedown and self.selected_square:  # If unclicking
                     self.selected_square.set_piece(self.dragging_piece)
                     if target_square in self.potential_squares:  # If dropping onto a potential move
-                        self.selected_square, self.potential_squares = handle_moving(
+                        self.potential_squares, event = handle_moving(
                             self.selected_square, target_square, self.spritesheet,
                             self.win, self.clock, self.taken_pieces
                         )
-                        self.Send({"action": "move", "num": self.num, "board": "board", "gameid": self.gameid})  # TODO
+                        print("Resolved==============\n",
+                              self.selected_square, "\n",
+                              target_square)
+                        self.Send({"action": "move",
+                                   "num": self.num,
+                                   "gameid": self.gameid,
+                                   "event": event,
+                                   "start_coords": self.selected_square.get_coords(),
+                                   "end_coords": target_square.get_coords(),
+                                   "start_piece": self.selected_square.get_piece_name(),
+                                   "end_piece": target_square.get_piece_name()})
                         self.white_to_play = not self.white_to_play
+                        self.turn = False
+                        if (event == "take") or (event == "move"):
+                            self.selected_square.set_piece(None)
+                        self.selected_square = None
                     self.dragging_piece = None
                 self.mousedown = False
 
-            if click and (not self.mousedown):  # If clicking down
+            elif click and (not self.mousedown):  # If clicking down
                 self.mousedown = True
                 if target_square in self.potential_squares:  # If clicking on a potential move
-                    self.selected_square, self.potential_squares = handle_moving(
+                    self.potential_squares, event = handle_moving(
                         self.selected_square, target_square, self.spritesheet,
                         self.win, self.clock, self.taken_pieces
                     )
-                    self.Send({"action": "move", "num": self.num, "board": "board", "gameid": self.gameid})  # TODO
+                    print("Resolved==============\n",
+                          self.selected_square, "\n",
+                          target_square)
+                    self.Send({"action": "move",
+                               "num": self.num,
+                               "gameid": self.gameid,
+                               "event": event,
+                               "start_coords": self.selected_square.get_coords(),
+                               "end_coords": target_square.get_coords(),
+                               "start_piece": self.selected_square.get_piece_name(),
+                               "end_piece": target_square.get_piece_name()})
                     self.white_to_play = not self.white_to_play
+                    self.turn = False
+                    if (event == "take") or (event == "move"):
+                        self.selected_square.set_piece(None)
+                    self.selected_square = None
                 elif target_square.piece:  # Otherwise, if selecting a new piece
                     self.selected_square, self.dragging_piece, self.potential_squares = select_new_square(
                         self.white_to_play, self.selected_square, target_square, board_state=self.board
@@ -135,7 +191,7 @@ class ChessGame(ConnectionListener):
 
     @staticmethod
     def Network(data):
-        print(data)
+        print("~~~Incoming - ", data)
 
 
 game = ChessGame('localhost', 8001)

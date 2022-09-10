@@ -6,17 +6,15 @@ from PodSixNet.Server import Server
 
 class ClientChannel(Channel):
     def Network(self, data):
-        print(f"DATA: {data}")
+        print(f"~~~Incoming - {data}")
 
     def Network_move(self, data):
         print("Move made?")
-        # Grab data
 
         num = data["num"]
-        board = data["board"]
         gameid = data["gameid"]
 
-        self._server.updateBoard(board, gameid, num)
+        self._server.updateBoard(gameid, num, data)
 
 
 class ChessServer(Server):
@@ -29,11 +27,11 @@ class ChessServer(Server):
         self.currentIndex = 0
         print("Server Initialised.")
 
-    def updateBoard(self, board, gameid, num):
+    def updateBoard(self, gameid, num, data):
         print("Update a board")
         game = [a for a in self.games if a.gameid == gameid]
         if len(game) == 1:
-            game[0].updateBoard(board, num)
+            game[0].updateBoard(num, data)
 
     def Connected(self, channel, addr):
         print('new connection:', str(channel), str(addr))
@@ -62,16 +60,17 @@ class Game:
         # Game State Variables
         self.board_state = None
 
-    def updateBoard(self, board, num):
+    def updateBoard(self, num, data):  # Forward data to waiting player.
         print("Game update board")
-        # Make sure it's their turn
+        data["action"] = "boardupdate"
+
         if num == self.turn:
-            self.turn = 0 if self.turn else 1
-
-            self.board_state = board
-
-            self.player0.Send({"action": "boardupdate", "board": self.board_state})
-            self.player1.Send({"action": "boardupdate", "board": self.board_state})
+            if num == 1:
+                self.turn = 0
+                self.player0.Send(data)
+            else:
+                self.turn = 1
+                self.player1.Send(data)
 
 
 

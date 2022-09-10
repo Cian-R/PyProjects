@@ -17,7 +17,7 @@ class Square:
 
     def __str__(self):
         if self.piece:
-            return f"<<Square - {self.piece.get_name}>> {str(self.piece)} {str(self.coords)}"
+            return f"<<Square - {self.piece.get_name()}>> {str(self.piece)} {str(self.coords)}"
         else:
             return f"<<Square>> {str(self.piece)} {str(self.coords)}"
 
@@ -53,6 +53,12 @@ class Square:
 
     def get_coords(self):
         return self.coords
+
+    def get_piece_name(self):
+        if self.piece:
+            return self.piece.get_name()
+        else:
+            return None
 
 
 class Piece:
