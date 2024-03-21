@@ -12,7 +12,7 @@ win = pygame.display.set_mode((830, 620))
 pygame.display.set_caption('Chess')
 clock = pygame.time.Clock()
 
-spritesheet = Spritesheet("src/Sprites/sprite_sheet.png")
+spritesheet = Spritesheet("Sprites\sprite_sheet.png")
 
 # Initiate squares and fill board
 board = []
