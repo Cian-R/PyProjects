@@ -10,9 +10,12 @@ bordermap = {0: (65, 125, 0), 1: (70, 70, 70), 2: (8, 21, 102)}
 
 
 # /////////////////////////////////////////////////////// ----- //////////////////////////////////////////////////////
-def create_border_river(boardmap):
-    flag1 = randint(0, 1)
-    flag2 = randint(0, 1)
+def create_border_river(boardmap, direction_weights=None):
+    if direction_weights is None:
+        direction_weights = [0, 0, 0, 0]
+    print("New river tile", direction_weights)
+    flag1 = randint(0, 1)  # 1 for will spawn on vertical walls, 0 for horizontal
+    flag2 = randint(0, 1)  # 1 will choose bottom / right wall
     print(flag1, flag2)
     if flag1:
         start = [flag2 * 19, randint(0, 19)]
@@ -25,6 +28,10 @@ def create_border_river(boardmap):
     # then get diection to coord using subtraction and sign(result)
     # use direction (with weighted values) to step (recursion?) create more river tiles.
     return boardmap
+
+
+def generate_river_with_direction(boardmap, coords, directions, ):
+    return None
 # /////////////////////////////////////////////////////// ----- //////////////////////////////////////////////////////
 
 
@@ -32,7 +39,7 @@ board = []
 for a in range(20):
     row = []
     for b in range(20):
-        row.append(randint(0,1))
+        row.append(randint(0, 1))
     board.append(row)
 
 
