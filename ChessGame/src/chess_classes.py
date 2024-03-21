@@ -17,7 +17,7 @@ class Square:
 
     def __str__(self):
         if self.piece:
-            return f"<<Square - {self.piece.get_name}>> {str(self.piece)} {str(self.coords)}"
+            return f"<<Square - {self.piece.get_name()}>> {str(self.piece)} {str(self.coords)}"
         else:
             return f"<<Square>> {str(self.piece)} {str(self.coords)}"
 
@@ -54,6 +54,12 @@ class Square:
     def get_coords(self):
         return self.coords
 
+    def get_piece_name(self):
+        if self.piece:
+            return self.piece.get_name()
+        else:
+            return None
+
 
 class Piece:
     def __init__(self, name, image):
@@ -83,6 +89,7 @@ class Spritesheet:
         image = self.get_sprite(x, y, w, h)
         return image
 
+    # noinspection PyTypeChecker
     def get_sprite(self, x, y, w, h):
         sprite = pygame.Surface((w, h), pygame.SRCALPHA, 32)
         sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h))

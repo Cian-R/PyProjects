@@ -1,14 +1,21 @@
 import pygame
 import math
-from chess_classes import Piece, Square, Spritesheet
-from chess_data import all_directions, knight_directions
+from copy import copy
+from chess_classes import Piece, Square
+from chess_data import directions, fonts, knight_directions
 
 
 def rounddown(x):
     return int(math.floor(x / 75.0)) * 75
 
 
-def render_board(surf, pieces, white_to_play):
+def render_scoreboard(surf, pieces, white_to_play, playing_white, turn):
+    if playing_white:
+        surf.blit(fonts['selecfont'].render("You are white", False, (0, 0, 0)), (616, 306))
+    else:
+        surf.blit(fonts['selecfont'].render("You are black", False, (0, 0, 0)), (616, 306))
+    if turn:
+        surf.blit(fonts['selecfont'].render("Your Turn!", False, (50, 200, 50)), (616, 336))
     # Render Turn Indicator
     if white_to_play:
         pygame.draw.rect(surf, (250, 250, 250), (616, 406, 208, 208))
@@ -28,6 +35,10 @@ def render_board(surf, pieces, white_to_play):
         pawn.draw(surf, 620 + (i * 18), 410)
     for i, piece in enumerate(pieces[1][1:]):
         piece.draw(surf, 620 + (i * 18), 510)
+
+
+def render_waiting_screen(surf, val):
+    surf.blit(fonts['bfont'].render("Waiting on another player...", False, (val, val, val)), (80, 200))
 
 
 def fill_board(board_list, spritesheet):
@@ -55,11 +66,6 @@ def fill_board(board_list, spritesheet):
     board_list[5][7].set_piece(Piece('wbish', spritesheet.parse_sprite('wbish')))
     board_list[6][7].set_piece(Piece('wknig', spritesheet.parse_sprite('wknig')))
     board_list[7][7].set_piece(Piece('wrook', spritesheet.parse_sprite('wrook')))
-
-    # board_list[3][2].set_piece(Piece('wpawn', spritesheet.parse_sprite('wpawn')))
-    # board_list[4][4].set_piece(Piece('wquee', spritesheet.parse_sprite('wquee')))
-    # board_list[4][3].set_piece(Piece('wknig', spritesheet.parse_sprite('wknig')))
-    # board_list[6][4].set_piece(Piece('wbish', spritesheet.parse_sprite('wbish')))
 
     return board_list
 
@@ -93,8 +99,17 @@ def deselect_square(current: Square):
     return current, movelist
 
 
+def end_move(current: Square):
+    if current:
+        current.set_highlight(False)
+    movelist = []
+    return current, movelist
+
+
 def handle_moving(current: Square, target: Square, spritesheet, surface, clock, collected):
     if target.piece:  # If there's an enemy piece
+        event = "take"
+        temp_square = copy(target)
         piece_name = target.piece.get_name()
         if piece_name[0] == "w":
             if piece_name[1:] == "pawn":
@@ -106,15 +121,30 @@ def handle_moving(current: Square, target: Square, spritesheet, surface, clock, 
                 collected[1][0].append(target.piece)
             else:
                 collected[1].append(target.piece)
+    else:
+        event = "move"
+        temp_square = None
 
-    move_piece(current, target)
+    print("Moving piece \n",
+          current, "\n",
+          target)
+    move_piece(current, target)  # Override end piece with the moving piece.
+
+    print("Temp square:", temp_square)
+    if temp_square:
+        print("Moving piece \n",
+              temp_square, "\n",
+              current)
+        move_piece(temp_square, current)  # Override origin square with taken piece (for multiplayer functionality).
+
     if target.piece.get_name()[1:] == "pawn":
         if target.get_coords()[1] == 0:
             promote_pawn(target, "w", spritesheet, surface, clock)
         elif target.get_coords()[1] == 7:
             promote_pawn(target, "b", spritesheet, surface, clock)
-    selected_square, potential_squares = deselect_square(current)
-    return selected_square, potential_squares
+
+    selected_square, potential_squares = end_move(current)
+    return potential_squares, event
 
 
 def move_piece(start_square: Square, end_square: Square):
@@ -165,7 +195,7 @@ def promote_pawn(pawn_square: Square, colour, spritesheet, surface, clock):
 
 
 def rec_add_squares(board_state, x, y, direction, colour, collected: list):
-    xmod, ymod = all_directions[direction]
+    xmod, ymod = directions[direction]
     x += xmod
     y += ymod
     if (x < 0) or (x > 7) or (y < 0) or (y > 7):
@@ -205,19 +235,19 @@ def get_moves(board_state, origin, piece_type):
                     response.append(board_state[x + mod][y + 1])
 
     elif piece_type[1:] == "bish":
-        for direction_name in list(all_directions.keys())[4:]:
+        for direction_name in list(directions.keys())[4:]:
             response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "rook":
-        for direction_name in list(all_directions.keys())[:4]:
+        for direction_name in list(directions.keys())[:4]:
             response += rec_add_squares(board_state, x, y, direction_name, piece_type[0], [])
 
     elif piece_type[1:] == "quee":
-        for key in all_directions:
+        for key in directions:
             response += rec_add_squares(board_state, x, y, key, piece_type[0], [])
 
     elif piece_type[1:] == "king":
-        set_directions = all_directions
+        set_directions = directions
 
     elif piece_type[1:] == "knig":
         set_directions = knight_directions
