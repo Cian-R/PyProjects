@@ -1,9 +1,11 @@
 import inspect
+import json
 
 
 class Billbot():
     def __init__(self):
-        self.categories = {"all": {}}
+        file = open('output.json', 'r')
+        self.categories = json.load(file)
 
         methods = inspect.getmembers(self, predicate=inspect.ismethod)
         self.method_dict = {name: method for name, method in methods}
@@ -23,10 +25,10 @@ class Billbot():
         else:
             self.method_dict[inputs[0]](*inputs[1:])
 
-    def add_cat(self, category_name):
+    def addcat(self, category_name):
         self.categories[category_name] = {}
 
-    def add_item(self, category, item, value):
+    def additem(self, category, item, value):
         self.categories["all"][item] = value
         self.categories[category][item] = value
 
@@ -36,16 +38,23 @@ class Billbot():
             for line in self.categories[item].keys():
                 print("    -", line, self.categories[item][line])
 
-    def get_cats(self):
+    def getcats(self):
         return [name for name in self.categories.keys()]
 
-    def get_items(self, cat):
+    def getitems(self, cat):
         return [item for item in self.categories[cat].keys()]
 
-    def remove_cat(self, cat):
+    def rmcat(self, cat):
         for key in self.categories[cat].keys():
             del self.categories["all"][key]
         del self.categories[cat]
+
+    def exit(self):
+        json_object = json.dumps(self.categories, indent=4)
+        save_file = open('output.json', 'w')
+        save_file.write(json_object)
+        save_file.close()
+        exit()
 
 
 app = Billbot()
