@@ -1,10 +1,14 @@
 {
     "all": {
-        "name": "453",
-        "Department_1": "Data"
+        "netflix": "20",
+        "coffee": "25",
+        "petrol": "30"
     },
-    "employee_2": {
-        "name": "457",
-        "Department_2": "Finance"
+    "entertainment": {
+        "netflix": "20"
+    },
+    "needs": {
+        "coffee": "25",
+        "petrol": "30"
     }
 }

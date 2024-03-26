@@ -49,6 +49,9 @@ class Billbot():
             del self.categories["all"][key]
         del self.categories[cat]
 
+    def wipe(self):
+        self.categories = {"all": {}}
+
     def exit(self):
         json_object = json.dumps(self.categories, indent=4)
         save_file = open('output.json', 'w')
