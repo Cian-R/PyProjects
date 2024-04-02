@@ -7,14 +7,17 @@ fonts = pygame.font.get_fonts()
 
 
 class ScrollableList():
-    def __init__(self, list_dictionary):
+    def __init__(self, dictionary_name, list_dictionary):
+        self.dictionary_name = dictionary_name
         self.dictionary = list_dictionary
+        self.dictionary["Add new entry"] = ""
         self.listfont = pygame.font.SysFont(fonts[8], 20)
         self.mousedown = False
         self.sliding = False
 
         self.slider_y = 0
         self.sliding_start_y = 0
+        self.window_y = 0
         self.mouse_start_y = 0
 
         self.scrollwindow_size = (50 * len(self.dictionary)) + 10
@@ -33,24 +36,35 @@ class ScrollableList():
 
     def generate_button(self, key, value, count):
         button_surf = pygame.Surface((300, 40))
-        pygame.draw.rect(button_surf, (100, 100, 100), (0, 0, 300, 40), border_radius=20)
-        button_surf.blit(self.listfont.render(str(key), False, (0, 0, 0)), (10, 10))
-        button_surf.blit(self.listfont.render(str(value), False, (0, 0, 0)), (200, 10))
+        button_surf.set_colorkey((255, 0, 255))
+        button_surf.fill((255, 0, 255))
 
-        offset = (400 + 20 + 10, 0 + 20 + 10 + (50 * count) - self.slider_y)
+        offset = (400 + 20 + 10, 0 + 20 + 10 + (50 * count) - self.window_y)
         mouse_pos = pygame.mouse.get_pos()
         relative_mouse_pos = tuple(mouse_pos[i] - offset[i] for i in range(len(mouse_pos)))
         if button_surf.get_rect().collidepoint(relative_mouse_pos):
-            button_surf.blit(self.highlight_surface, (0, 0))
+            pygame.draw.rect(button_surf, (140, 140, 140), (0, 0, 300, 40), border_radius=20)
             if pygame.mouse.get_pressed()[0]:
                 print("CLicked:", mouse_pos, offset)
                 return button_surf, True
+        else:
+            pygame.draw.rect(button_surf, (100, 100, 100), (0, 0, 300, 40), border_radius=20)
+
+        if self.dictionary_name == "all":
+            button_surf.blit(self.listfont.render(str(key) + " (" + self.dictionary_name + ")",
+                                                  False, (0, 0, 0)), (10, 10))
+        else:
+            button_surf.blit(self.listfont.render(str(key), False, (0, 0, 0)), (10, 10))
+        button_surf.blit(self.listfont.render(str(value), False, (0, 0, 0)), (200, 10))
+
+
         return button_surf, False
 
     def generate_slider(self):
         slider_surf = pygame.Surface((20, 400))
         slider_surf.fill((50, 50, 50))
         mouse_pos = pygame.mouse.get_pos()
+
 
         if not self.mousedown and pygame.mouse.get_pressed()[0]:
             offset = (400 + 380, 0)
@@ -68,6 +82,13 @@ class ScrollableList():
         if self.sliding:
             difference = mouse_pos[1] - self.mouse_start_y
             self.slider_y = self.sliding_start_y + difference
+        else:
+            wheel_direction = 0
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEWHEEL:
+                    wheel_direction = event.y
+            self.slider_y -= 20 * wheel_direction
+
         if self.slider_y < 0: self.slider_y = 0
         if self.slider_y > 400 - self.slider_length: self.slider_y = 400 - self.slider_length
 
@@ -75,8 +96,10 @@ class ScrollableList():
         # print(self.slider_y, self.max_slider_y)
         return slider_surf
 
-    def generate_surface(self):
+    def generate_surface(self, master_surface):
         num_items = len(self.dictionary)
+        activated_button = None
+
         if self.mousedown and not pygame.mouse.get_pressed()[0]:
             self.mousedown = False
 
@@ -90,18 +113,39 @@ class ScrollableList():
             scrolling_surf.blit(button, (10, 10 + (50 * count)))
             count += 1
             if activated and not self.mousedown:
-                self.mousedown = True
                 print("Clicking", key, value)
+                self.mousedown = True
+                activated_button = [key, value]
 
         if num_items > 7:
             full_surf.blit(self.generate_slider(), (380, 0))
 
         # Math for scroll window position, from scroll_y/max_scroll_y = window_y/max_window_y
-        window_y = int((self.slider_y * self.max_window_y)/self.max_slider_y)
-        scrolling_window.blit(scrolling_surf, (0, 0 - window_y))
+        self.window_y = int((self.slider_y * self.max_window_y)/self.max_slider_y)
+        scrolling_window.blit(scrolling_surf, (0, 0 - self.window_y))
 
         full_surf.blit(scrolling_window, (20, 20))
-        return full_surf
+        master_surface.blit(full_surf, (400, 0))
+        return activated_button
+
+
+class PopupDataEntry():
+    def __init__(self, key, item):
+        self.keyname = key
+        self.itemname = item
+
+    def renderBlackout(self, master_surface):
+        blackout_surf = pygame.Surface((800, 400))
+        blackout_surf.set_alpha(170)
+        blackout_surf.fill((0, 0, 0))
+        master_surface.blit(blackout_surf, (0, 0))
+
+    def renderBox(self, master_surface):
+        box_surface = pygame.Surface((400, 200))
+        pygame.draw.rect(box_surface, (255, 50, 50), (0, 0, 400, 200))
+
+        master_surface.blit(box_surface, (200, 100))
+
 
 
 class Data():
@@ -146,23 +190,28 @@ class BillBotUI():
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
         self.listfont = pygame.font.SysFont(fonts[8], 20)
+        self.overlay = None
 
         self.data = Data(datafile)
         self.focusIndex = 0
         self.focusKey = self.data.get_categories()[self.focusIndex]
 
-        self.scroll_area = ScrollableList(self.data.returnSubDic(self.focusKey))
+        self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
 
-        self.subWindow = False
 
     def update(self):
-        if self.subWindow:
-            self.drawSubWindow()
-        else:
-            self.screen.fill((200, 200, 200))
-            list_surf = self.scroll_area.generate_surface()
-            self.screen.blit(list_surf, (400, 0))
-            self.drawTotal()
+        self.screen.fill((200, 200, 200))
+
+        returned_button = self.scroll_area.generate_surface(self.screen)
+        if returned_button:
+            print("==========================")
+            self.overlay = PopupDataEntry(*returned_button)
+
+        self.drawTotal()
+
+        if self.overlay:
+            self.overlay.renderBlackout(self.screen)
+            self.overlay.renderBox(self.screen)
         pygame.display.flip()
         self.clock.tick(30)
 
