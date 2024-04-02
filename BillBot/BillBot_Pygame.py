@@ -130,21 +130,57 @@ class ScrollableList():
 
 
 class PopupDataEntry():
-    def __init__(self, key, item):
+    def __init__(self, key, value):
         self.keyname = key
-        self.itemname = item
+        self.value = value
+        self.listfont = pygame.font.SysFont(fonts[8], 20)
 
-    def renderBlackout(self, master_surface):
+        self.locked = True
+
+
+
+    @staticmethod
+    def renderBlackout(master_surface):
         blackout_surf = pygame.Surface((800, 400))
         blackout_surf.set_alpha(170)
         blackout_surf.fill((0, 0, 0))
         master_surface.blit(blackout_surf, (0, 0))
 
+    def _renderExitButton(self, surf, mousepos, click):
+        # 200, 100
+        if (575 < mousepos[0] < 595) and (105 < mousepos[1] < 125):
+            pygame.draw.rect(surf, (250, 50, 50), (375, 5, 20, 20))
+            if click and (not self.locked):
+                return True
+        else:
+            pygame.draw.rect(surf, (200, 50, 50), (375, 5, 20, 20))
+        surf.blit(self.listfont.render("X", False, (0, 0, 0)), (375, 5))
+        return False
+
     def renderBox(self, master_surface):
+        pos = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()[0]
+        if self.locked:
+            if not click:
+                self.locked = False
+                print("Unlocked")
+        else:
+            if click:
+                if (not 200 < pos[0] < 600) or (not 100 < pos[1] < 300):
+                    return True
+
         box_surface = pygame.Surface((400, 200))
-        pygame.draw.rect(box_surface, (255, 50, 50), (0, 0, 400, 200))
+        pygame.draw.rect(box_surface, (50, 50, 150), (0, 0, 400, 200))
+
+        if self._renderExitButton(box_surface, pos, click):
+            return self.keyname, self.value
+
+        box_surface.blit(self.listfont.render(str(self.keyname), False, (0, 0, 0)), (10, 10))
+        box_surface.blit(self.listfont.render(str(self.value), False, (0, 0, 0)), (10, 110))
 
         master_surface.blit(box_surface, (200, 100))
+
+        return False
 
 
 
@@ -200,18 +236,25 @@ class BillBotUI():
 
 
     def update(self):
-        self.screen.fill((200, 200, 200))
 
-        returned_button = self.scroll_area.generate_surface(self.screen)
-        if returned_button:
-            print("==========================")
-            self.overlay = PopupDataEntry(*returned_button)
+
+        if self.overlay:
+            unhook = self.overlay.renderBox(self.screen)
+            if unhook:
+                print("unhooking", self.overlay)
+                # del self.overlay
+                self.overlay = None
+                print(self.overlay)
+
+        else:
+            self.screen.fill((200, 200, 200))
+            returned_button = self.scroll_area.generate_surface(self.screen)
+            if returned_button:
+                self.overlay = PopupDataEntry(*returned_button)
+                self.overlay.renderBlackout(self.screen)
 
         self.drawTotal()
 
-        if self.overlay:
-            self.overlay.renderBlackout(self.screen)
-            self.overlay.renderBox(self.screen)
         pygame.display.flip()
         self.clock.tick(30)
 
