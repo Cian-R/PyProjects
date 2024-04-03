@@ -15,7 +15,7 @@ print("The dictionary is as: \n", dictionary_employees, "\n")
 # json object getting serialised
 json_object = json.dumps(dictionary_employees, indent=4)
 
-save_file = open('output.json', 'w')
+save_file = open('src/output.json', 'w')
 save_file.write(json_object)
 save_file.close()
 

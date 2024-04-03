@@ -4,7 +4,7 @@ import json
 
 class Billbot():
     def __init__(self):
-        file = open('output.json', 'r')
+        file = open('src/output.json', 'r')
         self.categories = json.load(file)
 
         methods = inspect.getmembers(self, predicate=inspect.ismethod)
@@ -54,7 +54,7 @@ class Billbot():
 
     def exit(self):
         json_object = json.dumps(self.categories, indent=4)
-        save_file = open('output.json', 'w')
+        save_file = open('src/output.json', 'w')
         save_file.write(json_object)
         save_file.close()
         exit()

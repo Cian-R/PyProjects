@@ -1,3 +1,25 @@
-dic = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 10, 'k': 11, 'l': 12, 'm': 13, 'n': 14, 'o': 15, 'p': 16, 'q': 17, 'r': 18, 's': 19, 't': 20, 'u': 21, 'v': 22, 'w': 23, 'x': 24, 'y': 25, 'z': 26}
+import math
 
-print(len(dic.keys()))
+
+def findTwinFactors(n):
+    middle_val = math.sqrt(n)
+    if middle_val.is_integer():
+        middle_val = int(middle_val)
+        print(f"Factors of {n} are {middle_val} and {middle_val}")
+        return [middle_val, middle_val]
+    else:
+        middle_val = int(middle_val)
+        for i in range(n // 2):
+            if (n % (middle_val + i)) == 0:
+                print(f"Factors of {n} are {middle_val + i} and {int(n / (middle_val + i))}")
+                return [middle_val + i, int(n / (middle_val + i))]
+            elif (n % (middle_val - i)) == 0:
+                print(f"Factors of {n} are {middle_val - i} and {int(n / (middle_val - i))}")
+                return [middle_val - i, int(n / (middle_val - i))]
+
+
+findTwinFactors(64)
+findTwinFactors(55)
+findTwinFactors(100)
+findTwinFactors(45)
+findTwinFactors(2450)
