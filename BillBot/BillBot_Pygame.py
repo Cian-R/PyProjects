@@ -52,7 +52,7 @@ class InputBox:
         mouse_click = pygame.mouse.get_pressed()[0]
         offset = (200, 100)
         relative_mouse_pos = tuple(mouse_pos[i] - offset[i] for i in range(len(mouse_pos)))
-        if (self.clicking is False) and mouse_click:
+        if (not self.clicking) and mouse_click:
             self.clicking = True
             if self.rect.collidepoint(relative_mouse_pos):
                 self.active = not self.active
@@ -60,7 +60,6 @@ class InputBox:
                 self.active = False
         if self.clicking and (not mouse_click):
             self.clicking = False
-
         if self.active:
             if len(keyinput) > 0:
                 print(f"box {self.text} recieved key input '{keyinput}'")
@@ -69,16 +68,13 @@ class InputBox:
                 else:
                     self.text += keyinput
                 self.txt_surface = self.listfont.render(self.text, True, self.colour)
-
         return self.text
 
     def draw(self, screen):
-        # Blit the rect.
         if self.active:
             pygame.draw.rect(screen, (50, 100, 200), self.rect, 2)
         else:
             pygame.draw.rect(screen, (50, 200, 100), self.rect, 2)
-        # Blit the text.
         screen.blit(self.txt_surface, (self.rect.x + 10, self.rect.y + 10))
 
 
@@ -284,6 +280,7 @@ class Data():
         del self.dataDic[cat][key]
 
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 class BillBotUI():
     def __init__(self, datafile):
         pygame.display.set_caption("BillBot")
@@ -314,9 +311,7 @@ class BillBotUI():
                     keyinput = str(event.unicode)
             if (not click) and self.actionlock:
                 self.actionlock = False
-
-
-
+            # ===================================================================================================
             if self.overlay:
                 unhook = self.overlay.renderBox(self.screen, keyinput)
                 if unhook[0] and (not self.actionlock):
@@ -332,7 +327,7 @@ class BillBotUI():
                     if unhook[0] != unhook[1]:
                         self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
                     self.actionlock = True
-
+            # ===================================================================================================
             else:
                 self.screen.fill((200, 200, 200))
 
@@ -347,10 +342,8 @@ class BillBotUI():
             self.drawTotal()
             if self.actionlock:
                 pygame.draw.rect(self.screen, (0, 0, 0), (0, 0, 10, 10))
-
             pygame.display.flip()
             self.clock.tick(30)
-
         return None
 
     def drawTotal(self):
