@@ -27,3 +27,4 @@ new_dict = json.loads(json_object)
 for key in new_dict.keys():
     print(key)
 
+dic = {'all': {}}
