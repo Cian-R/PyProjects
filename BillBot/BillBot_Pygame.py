@@ -2,7 +2,6 @@ import json
 # import time
 import pygame
 
-
 pygame.init()
 fonts = pygame.font.get_fonts()
 
@@ -43,14 +42,14 @@ class Button():
 
 
 class InputBox:
-    def __init__(self, x, y, w, h, text='', placeholder='', offset=(0, 0)):
+    def __init__(self, x, y, w, h, text='', placeholder='', offset=(0, 0), active=False):
         self.rect = pygame.Rect(x, y, w, h)
         self.colour = (80, 200, 200)
         self.text = str(text)
         self.listfont = pygame.font.SysFont(fonts[8], 20)
         self.placeholder_txt = self.listfont.render(placeholder, True, (100, 100, 140))
         self.txt_surface = self.listfont.render(self.text, True, self.colour)
-        self.active = False
+        self.active = active
         self.offset = [offset[0], offset[1]]
         self.clicking = True
 
@@ -69,13 +68,19 @@ class InputBox:
             self.clicking = False
         if self.active:
             if len(keyinput) > 0:
-                print(f"box {self.text} recieved key input '{keyinput}'")
+                print(f"box {self.text} recieved key input!")
+                print(f'|{keyinput}|')
                 if keyinput == '\b':
                     self.text = self.text[:-1]
+                elif keyinput == '	':
+                    return self.text, True, False
+                elif keyinput == '\r':
+                    print("we got an r")
+                    return self.text, False, True
                 else:
                     self.text += keyinput
                 self.txt_surface = self.listfont.render(self.text, True, self.colour)
-        return self.text
+        return self.text, False, False
 
     def draw(self, screen):
         if self.active:
@@ -228,6 +233,13 @@ class ScrollableList():
         if self.num_items > 7:
             full_surf.blit(self.generate_slider(), (380, 0))
             self.window_y = int((self.slider_y * self.max_window_y) / self.max_slider_y)
+        elif (self.num_items == 0) and (self.dictionary_name == "all"):
+            scrolling_window.blit(self.listfont.render("Create a new category", False, (0, 0, 0))
+                                  , (50, 50))
+            scrolling_window.blit(self.listfont.render("and add a new entry", False, (0, 0, 0))
+                                  , (50, 80))
+            scrolling_window.blit(self.listfont.render("to get started.", False, (0, 0, 0))
+                                  , (50, 110))
         scrolling_window.blit(scrolling_surf, (0, 0 - self.window_y))
 
         full_surf.blit(scrolling_window, (20, 20))
@@ -266,6 +278,7 @@ class TotalView():
         for tab in range(len(self.categories)):
             txt_surface = self.listfont.render(str(self.categories[tab]).upper(), True, (0, 0, 0))
             width = txt_surface.get_width() + 10
+            if width < 30: width = 30
             if self.categories[tab] == self.selected_category:
                 pygame.draw.rect(view_box, (215, 215, 215), (0 + taboffset, 0, width, 50), border_radius=4)
                 delay = True
@@ -297,13 +310,14 @@ class TotalView():
         if len(outstring.split()) > 1:
             if len(outstring.split(".")[1]) == 1:
                 outstring = outstring + "0"
-        view_box.blit(self.grandfont.render(f"${outstring} / month", False, (0, 0, 0)), (30, 100))
+        view_box.blit(self.grandfont.render(f"${outstring} / example", False, (0, 0, 0)), (30, 100))
 
         can_delete = (self.selected_category != "all")
-        if self.create_button.draw(view_box, (50, 300)):
+        if self.create_button.draw(view_box, (50, 304)):
             return_code, return_value = 2, None
-        if self.delete_button.draw(view_box, (50, 350), usable=can_delete):
-            return_code, return_value = 3, self.selected_category
+        if can_delete:
+            if self.delete_button.draw(view_box, (50, 346), usable=can_delete):
+                return_code, return_value = 3, self.selected_category
 
         main_view.blit(view_box, (5, 5))
         master_surface.blit(main_view, (0, 0))
@@ -319,8 +333,10 @@ class PopupDataEntry():
         self.old_value = value
         self.listfont = pygame.font.SysFont(fonts[8], 20)
 
-        self.keybox = InputBox(20, 20, 360, 40, text=self.keyname, placeholder='Title', offset=(200, 100))
-        self.valuebox = InputBox(20, 80, 360, 40, text=self.value, placeholder='$ Cost / Month', offset=(200, 100))
+        self.keybox = InputBox(20, 20, 360, 40, text=self.keyname,
+                               placeholder='Title', offset=(200, 100), active=True)
+        self.valuebox = InputBox(20, 80, 360, 40, text=self.value,
+                                 placeholder='$ Cost / Month', offset=(200, 100))
 
         self.cancelbutton = Button(100, 40, (200, 100, 100), (250, 150, 150), "Cancel", (200, 100))
         if self.old_keyname != "":
@@ -335,8 +351,19 @@ class PopupDataEntry():
         master_surface.blit(blackout_surf, (0, 0))
 
     def renderBox(self, master_surface, keyinput):
-        self.keyname = self.keybox.handle_event(keyinput)
-        self.value = self.valuebox.handle_event(keyinput)
+        print("renderin' box")
+        self.keyname, tabbed_key, enter_key = self.keybox.handle_event(keyinput)
+        self.value, tabbed_value, enter_value = self.valuebox.handle_event(keyinput)
+        tabbed = tabbed_value or tabbed_key
+        entered = enter_value or enter_key
+        if tabbed:
+            print(tabbed)
+            if self.keybox.active:
+                self.keybox.active = False
+                self.valuebox.active = True
+            else:
+                self.keybox.active = True
+                self.valuebox.active = False
 
         box_surface = pygame.Surface((400, 200))
         pygame.draw.rect(box_surface, (50, 50, 100), (0, 0, 400, 200))
@@ -356,7 +383,7 @@ class PopupDataEntry():
                 can_confirm = False
         else:
             can_confirm = False
-        if self.confirmbutton.draw(box_surface, (280, 140), usable=can_confirm):
+        if (entered and can_confirm) or (self.confirmbutton.draw(box_surface, (280, 140), usable=can_confirm)):
             print(f'confirm {self.keyname} {self.value}')
             return [self.old_keyname, self.keyname, self.value]
 
@@ -368,6 +395,31 @@ class PopupDataEntry():
         master_surface.blit(box_surface, (200, 100))
 
         return [False, False, False]
+
+    def renderCategoryBox(self, categories, master_surface, keyinput):
+        self.keyname = self.keybox.handle_event(keyinput)
+
+        self.keyname, tabbed, entered = self.keybox.handle_event(keyinput)
+
+        box_surface = pygame.Surface((400, 200))
+        pygame.draw.rect(box_surface, (50, 50, 100), (0, 0, 400, 200))
+
+        self.keybox.draw(box_surface)
+
+        if self.cancelbutton.draw(box_surface, (20, 140)):
+            print(f'cancel {self.old_keyname} {self.old_value} |')
+            return False, ""
+
+        if (self.keyname not in categories) and (len(self.keyname) > 0) and (len(self.keyname) < 16):
+            can_confirm = True
+        else:
+            can_confirm = False
+        if (entered and can_confirm) or (self.confirmbutton.draw(box_surface, (280, 140), usable=can_confirm)):
+            print(f'confirm {self.keyname} {self.value}')
+            return True, self.keyname
+        master_surface.blit(box_surface, (200, 100))
+
+        return None, None
 
 
 class Data():
@@ -425,6 +477,7 @@ class Data():
 
     def remove_item(self, cat, key):
         del self.dataDic[cat][key]
+        del self.dataDic["all"][key]
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -439,7 +492,8 @@ class BillBotUI():
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
         self.listfont = pygame.font.SysFont(fonts[8], 20)
-        self.overlay = None
+        self.entry_overlay = None
+        self.category_overlay = None
         self.actionlock = True
 
         self.focusIndex = 3
@@ -460,24 +514,35 @@ class BillBotUI():
                     completed = True
                 if event.type == pygame.KEYDOWN:
                     keyinput = str(event.unicode)
+                    print(f"INCOMING KEYINPUT |{keyinput}|{event}")
             if (not click) and self.actionlock:
                 self.actionlock = False
             # ===================================================================================================
-            if self.overlay:
-                unhook = self.overlay.renderBox(self.screen, keyinput)
+            if self.entry_overlay:
+                unhook = self.entry_overlay.renderBox(self.screen, keyinput)
                 if (unhook[0] is not False) and (not self.actionlock):
                     print(f'UNHOOK COMMAND: {unhook}')
-                    if unhook[0] != unhook[1]:
+                    if (unhook[0] != unhook[1]) and (unhook[0] != ""):
                         print("unhook - change/delete key")
                         self.data.remove_item(self.focusKey, unhook[0])
                     if unhook[1] != "":
                         print("unhook - add/update key")
-                        self.data.dataDic[self.focusKey][unhook[1]] = unhook[2]
-                    print("unhooking", self.overlay)
-                    self.overlay = None
-                    print(self.overlay)
+                        self.data.add_item(self.focusKey, unhook[1], unhook[2])
+                        # self.data.dataDic[self.focusKey][unhook[1]] = unhook[2]
+                    print("unhooking", self.entry_overlay)
+                    self.entry_overlay = None
+                    print(self.entry_overlay)
                     if unhook[0] != unhook[1]:
                         self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
+                    self.actionlock = True
+            # ===================================================================================================
+            elif self.category_overlay:
+                unhook = self.category_overlay.renderCategoryBox(self.data.get_categories(), self.screen, keyinput)
+                if unhook[0] is not None:
+                    if unhook[0] is True:
+                        self.data.add_category(unhook[1])
+                        self.totalview = TotalView(self.data.dataDic, self.data.get_categories(), self.focusIndex)
+                    self.category_overlay = None
                     self.actionlock = True
             # ===================================================================================================
             else:
@@ -488,7 +553,10 @@ class BillBotUI():
                     self.focusKey = command_data
                     self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
                 elif command == 2:
-                    pass
+                    print(f"commencing overlay for adding category")
+                    self.category_overlay = PopupDataEntry("", "")
+                    self.category_overlay.renderBlackout(self.screen)
+                    self.actionlock = True
                 elif command == 3:
                     self.data.remove_category(command_data)
                     self.focusIndex = 0
@@ -500,8 +568,8 @@ class BillBotUI():
 
                 if returned_button and (not self.actionlock):
                     print(f"commencing overlay with {returned_button}")
-                    self.overlay = PopupDataEntry(*returned_button)
-                    self.overlay.renderBlackout(self.screen)
+                    self.entry_overlay = PopupDataEntry(*returned_button)
+                    self.entry_overlay.renderBlackout(self.screen)
                     self.actionlock = True
 
             # if self.actionlock: pygame.draw.rect(self.screen, (0, 0, 0), (0, 0, 10, 10))
