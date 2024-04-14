@@ -1,5 +1,5 @@
 import json
-import time
+# import time
 import pygame
 
 pygame.init()
@@ -7,26 +7,27 @@ fonts = pygame.font.get_fonts()
 
 
 class Button():
-    def __init__(self, x, y, w, h, colour, offcolour, text, offset):
-        self.pos = [x, y]
+    def __init__(self, w, h, colour, offcolour, text, offset):
         self.size = [w, h]
-        self.offset = (offset[0] + x, offset[1] + y)
+        self.offset = (offset[0], offset[1])
         self.surf = pygame.Surface(self.size)
         self.surf.set_colorkey((255, 0, 255))
         self.surf.fill((255, 0, 255))
         self.colour = colour
         self.offcolour = offcolour
         listfont = pygame.font.SysFont(fonts[8], 20)
+        self.text = text
         self.txt_surface = listfont.render(text, True, (0, 0, 0))
 
-    def draw(self, master_surf, usable=True):
+    def draw(self, master_surf, position, usable=True):
+        fixed_offset = (self.offset[0] + position[0], self.offset[1] + position[1])
         factors = (0, 0, self.size[0], self.size[1])
         if not usable:
             pygame.draw.rect(self.surf, (60, 60, 60), factors, border_radius=10)
         else:
             mouse_pos = pygame.mouse.get_pos()
             mouse_click = pygame.mouse.get_pressed()[0]
-            relative_mouse_pos = tuple(mouse_pos[i] - self.offset[i] for i in range(len(mouse_pos)))
+            relative_mouse_pos = tuple(mouse_pos[i] - fixed_offset[i] for i in range(len(mouse_pos)))
             if self.surf.get_rect().collidepoint(relative_mouse_pos):
                 pygame.draw.rect(self.surf, self.offcolour, factors, border_radius=10)
                 pygame.draw.rect(self.surf, self.colour, factors, border_radius=10, width=2)
@@ -36,19 +37,19 @@ class Button():
                 pygame.draw.rect(self.surf, self.colour, factors, border_radius=10)
                 pygame.draw.rect(self.surf, self.offcolour, factors, border_radius=10, width=2)
         self.surf.blit(self.txt_surface, (10, 12))
-        master_surf.blit(self.surf, self.pos)
+        master_surf.blit(self.surf, position)
         return False
 
 
 class InputBox:
-    def __init__(self, x, y, w, h, text='', placeholder='', offset=(0, 0)):
+    def __init__(self, x, y, w, h, text='', placeholder='', offset=(0, 0), active=False):
         self.rect = pygame.Rect(x, y, w, h)
         self.colour = (80, 200, 200)
         self.text = str(text)
         self.listfont = pygame.font.SysFont(fonts[8], 20)
         self.placeholder_txt = self.listfont.render(placeholder, True, (100, 100, 140))
         self.txt_surface = self.listfont.render(self.text, True, self.colour)
-        self.active = False
+        self.active = active
         self.offset = [offset[0], offset[1]]
         self.clicking = True
 
@@ -67,13 +68,19 @@ class InputBox:
             self.clicking = False
         if self.active:
             if len(keyinput) > 0:
-                print(f"box {self.text} recieved key input '{keyinput}'")
+                print(f"box {self.text} recieved key input!")
+                print(f'|{keyinput}|')
                 if keyinput == '\b':
                     self.text = self.text[:-1]
+                elif keyinput == '	':
+                    return self.text, True, False
+                elif keyinput == '\r':
+                    print("we got an r")
+                    return self.text, False, True
                 else:
                     self.text += keyinput
                 self.txt_surface = self.listfont.render(self.text, True, self.colour)
-        return self.text
+        return self.text, False, False
 
     def draw(self, screen):
         if self.active:
@@ -113,7 +120,6 @@ class ScrollableList():
         self.highlight_surface.set_alpha(100)
         pygame.draw.rect(self.highlight_surface, (255, 255, 255), (0, 0, 300, 40), border_radius=20)
 
-
     def generate_button(self, key, value, count):
         button_surf = pygame.Surface((300, 40))
         button_surf.set_colorkey((255, 0, 255))
@@ -132,11 +138,7 @@ class ScrollableList():
         else:
             pygame.draw.rect(button_surf, (100, 100, 100), (0, 0, 300, 40), border_radius=20)
 
-        if self.dictionary_name == "all":
-            button_surf.blit(self.listfont.render(str(key) + " (" + self.dictionary_name + ")",
-                                                  False, (0, 0, 0)), (10, 10))
-        else:
-            button_surf.blit(self.listfont.render(str(key), False, (0, 0, 0)), (10, 10))
+        button_surf.blit(self.listfont.render(str(key), False, (0, 0, 0)), (10, 10))
         button_surf.blit(self.listfont.render(str(value), False, (0, 0, 0)), (200, 10))
 
         return button_surf, clicked
@@ -230,7 +232,14 @@ class ScrollableList():
 
         if self.num_items > 7:
             full_surf.blit(self.generate_slider(), (380, 0))
-            self.window_y = int((self.slider_y * self.max_window_y)/self.max_slider_y)
+            self.window_y = int((self.slider_y * self.max_window_y) / self.max_slider_y)
+        elif (self.num_items == 0) and (self.dictionary_name == "all"):
+            scrolling_window.blit(self.listfont.render("Create a new category", False, (0, 0, 0))
+                                  , (50, 50))
+            scrolling_window.blit(self.listfont.render("and add a new entry", False, (0, 0, 0))
+                                  , (50, 80))
+            scrolling_window.blit(self.listfont.render("to get started.", False, (0, 0, 0))
+                                  , (50, 110))
         scrolling_window.blit(scrolling_surf, (0, 0 - self.window_y))
 
         full_surf.blit(scrolling_window, (20, 20))
@@ -239,18 +248,25 @@ class ScrollableList():
 
 
 class TotalView():
-    def __init__(self, categories):
+    def __init__(self, dataDic, categories, starting_index):
         self.listfont = pygame.font.SysFont(fonts[8], 10)
+        self.grandfont = pygame.font.SysFont(fonts[69], 40)
         self.mousedown = False
 
+        self.dataDic = dataDic
         self.categories = categories
-        self.selected_index = 2
+        self.selected_index = starting_index
         self.selected_category = self.categories[self.selected_index]
+        self.create_button = Button(200, 40, (200, 100, 50), (150, 50, 10), "Create Category", (5, 5))
+        self.delete_button = Button(200, 40, (200, 30, 30), (100, 10, 10), "Delete Category", (5, 5))
 
     def draw(self, master_surface):
         main_view = pygame.Surface((400, 400))
         main_view.fill((230, 140, 40))
         view_box = pygame.Surface((390, 390))
+
+        return_code = 0
+        return_value = None
 
         taboffset = 0
         delay = False
@@ -259,10 +275,10 @@ class TotalView():
         if (not click) and self.mousedown:
             self.mousedown = False
 
-
         for tab in range(len(self.categories)):
             txt_surface = self.listfont.render(str(self.categories[tab]).upper(), True, (0, 0, 0))
             width = txt_surface.get_width() + 10
+            if width < 30: width = 30
             if self.categories[tab] == self.selected_category:
                 pygame.draw.rect(view_box, (215, 215, 215), (0 + taboffset, 0, width, 50), border_radius=4)
                 delay = True
@@ -279,15 +295,34 @@ class TotalView():
                     self.mousedown = True
                     self.selected_index = tab
                     self.selected_category = self.categories[self.selected_index]
+                    return_code, return_value = 1, self.selected_category
 
             view_box.blit(txt_surface, (5 + taboffset, 20))
 
             taboffset += width
 
-        pygame.draw.rect(view_box, (215, 215, 215), (0, 40, 390, 350), border_radius=10)
+        pygame.draw.rect(view_box, (215, 215, 215), (0, 40, 390, 260), border_radius=10)
+
+        total = 0
+        for value in self.dataDic[self.selected_category].values():
+            total += float(value)
+        outstring = str(total)
+        if len(outstring.split()) > 1:
+            if len(outstring.split(".")[1]) == 1:
+                outstring = outstring + "0"
+        view_box.blit(self.grandfont.render(f"${outstring} / example", False, (0, 0, 0)), (30, 100))
+
+        can_delete = (self.selected_category != "all")
+        if self.create_button.draw(view_box, (50, 304)):
+            return_code, return_value = 2, None
+        if can_delete:
+            if self.delete_button.draw(view_box, (50, 346), usable=can_delete):
+                return_code, return_value = 3, self.selected_category
 
         main_view.blit(view_box, (5, 5))
         master_surface.blit(main_view, (0, 0))
+
+        return return_code, return_value
 
 
 class PopupDataEntry():
@@ -298,14 +333,15 @@ class PopupDataEntry():
         self.old_value = value
         self.listfont = pygame.font.SysFont(fonts[8], 20)
 
-        self.keybox = InputBox(20, 20, 360, 40, text=self.keyname, placeholder='Title', offset=(200, 100))
-        self.valuebox = InputBox(20, 80, 360, 40, text=self.value, placeholder='$ Cost / Month', offset=(200, 100))
+        self.keybox = InputBox(20, 20, 360, 40, text=self.keyname,
+                               placeholder='Title', offset=(200, 100), active=True)
+        self.valuebox = InputBox(20, 80, 360, 40, text=self.value,
+                                 placeholder='$ Cost / Month', offset=(200, 100))
 
-
-        self.cancelbutton = Button(20, 140, 100, 40, (200, 100, 100), (250, 150, 150), "Cancel", (200, 100))
+        self.cancelbutton = Button(100, 40, (200, 100, 100), (250, 150, 150), "Cancel", (200, 100))
         if self.old_keyname != "":
-            self.deletebutton = Button(150, 140, 100, 40, (200, 10, 10), (250, 10, 10), "Delete", (200, 100))
-        self.confirmbutton = Button(280, 140, 100, 40, (100, 200, 100), (150, 250, 150), "Confirm", (200, 100))
+            self.deletebutton = Button(100, 40, (200, 10, 10), (250, 10, 10), "Delete", (200, 100))
+        self.confirmbutton = Button(100, 40, (100, 200, 100), (150, 250, 150), "Confirm", (200, 100))
 
     @staticmethod
     def renderBlackout(master_surface):
@@ -315,8 +351,19 @@ class PopupDataEntry():
         master_surface.blit(blackout_surf, (0, 0))
 
     def renderBox(self, master_surface, keyinput):
-        self.keyname = self.keybox.handle_event(keyinput)
-        self.value = self.valuebox.handle_event(keyinput)
+        print("renderin' box")
+        self.keyname, tabbed_key, enter_key = self.keybox.handle_event(keyinput)
+        self.value, tabbed_value, enter_value = self.valuebox.handle_event(keyinput)
+        tabbed = tabbed_value or tabbed_key
+        entered = enter_value or enter_key
+        if tabbed:
+            print(tabbed)
+            if self.keybox.active:
+                self.keybox.active = False
+                self.valuebox.active = True
+            else:
+                self.keybox.active = True
+                self.valuebox.active = False
 
         box_surface = pygame.Surface((400, 200))
         pygame.draw.rect(box_surface, (50, 50, 100), (0, 0, 400, 200))
@@ -324,26 +371,55 @@ class PopupDataEntry():
         self.keybox.draw(box_surface)
         self.valuebox.draw(box_surface)
 
-        if self.cancelbutton.draw(box_surface):
+        if self.cancelbutton.draw(box_surface, (20, 140)):
             print(f'cancel {self.old_keyname} {self.old_value} |')
             return [self.old_keyname, self.old_keyname, self.old_value]
 
         if (len(self.value) > 0) and (len(self.keyname) > 0):
-            can_confirm = True
+            try:
+                float(self.value)
+                can_confirm = True
+            except ValueError:
+                can_confirm = False
         else:
             can_confirm = False
-        if self.confirmbutton.draw(box_surface, usable=can_confirm):
+        if (entered and can_confirm) or (self.confirmbutton.draw(box_surface, (280, 140), usable=can_confirm)):
             print(f'confirm {self.keyname} {self.value}')
             return [self.old_keyname, self.keyname, self.value]
 
         if self.old_keyname != "":
-            if self.deletebutton.draw(box_surface):
+            if self.deletebutton.draw(box_surface, (150, 140)):
                 print(f'cancel {self.keyname} {self.value}')
                 return [self.old_keyname, "", ""]
 
         master_surface.blit(box_surface, (200, 100))
 
         return [False, False, False]
+
+    def renderCategoryBox(self, categories, master_surface, keyinput):
+        self.keyname = self.keybox.handle_event(keyinput)
+
+        self.keyname, tabbed, entered = self.keybox.handle_event(keyinput)
+
+        box_surface = pygame.Surface((400, 200))
+        pygame.draw.rect(box_surface, (50, 50, 100), (0, 0, 400, 200))
+
+        self.keybox.draw(box_surface)
+
+        if self.cancelbutton.draw(box_surface, (20, 140)):
+            print(f'cancel {self.old_keyname} {self.old_value} |')
+            return False, ""
+
+        if (self.keyname not in categories) and (len(self.keyname) > 0) and (len(self.keyname) < 16):
+            can_confirm = True
+        else:
+            can_confirm = False
+        if (entered and can_confirm) or (self.confirmbutton.draw(box_surface, (280, 140), usable=can_confirm)):
+            print(f'confirm {self.keyname} {self.value}')
+            return True, self.keyname
+        master_surface.blit(box_surface, (200, 100))
+
+        return None, None
 
 
 class Data():
@@ -352,12 +428,25 @@ class Data():
         try:
             file = open(path, 'r')
             self.dataDic = json.load(file)
+            file.close()
             print(self.dataDic)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
+            print(f"File {path} doesn't exist. Creating new.")
             file = open(path, 'x')
             file.close()
             self.dataDic = {'all': {}}
-
+        except json.JSONDecodeError:
+            print(f"Decode error trying to read contents of {path}")
+            print("Enter 'Y' to wipe data of file and treat as new. Enter anything else to close program safely.")
+            if input("> ").lower() == 'y':
+                print("\nWiping ...")
+                file = open(path, 'w')
+                file.write("")
+                file.close()
+                self.dataDic = {'all': {}}
+            else:
+                print("\nExiting")
+                exit()
 
     def returnSubDic(self, subset):
         return self.dataDic[subset]
@@ -388,30 +477,32 @@ class Data():
 
     def remove_item(self, cat, key):
         del self.dataDic[cat][key]
+        del self.dataDic["all"][key]
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 class BillBotUI():
     def __init__(self, datafile):
+        self.path = datafile
+        self.data = Data(datafile)
+
         pygame.display.set_caption("BillBot")
         # window_icon = pygame.image.load('src/icon.png')
         # pygame.display.set_icon(window_icon)
         self.screen = pygame.display.set_mode((800, 400))
         self.clock = pygame.time.Clock()
         self.listfont = pygame.font.SysFont(fonts[8], 20)
-        self.overlay = None
+        self.entry_overlay = None
+        self.category_overlay = None
         self.actionlock = True
 
-        self.path = datafile
-        self.data = Data(datafile)
         self.focusIndex = 3
-        if self.focusIndex > len(self.data.get_categories())-1:
+        if self.focusIndex > len(self.data.get_categories()) - 1:
             self.focusIndex = 0
         self.focusKey = self.data.get_categories()[self.focusIndex]
 
         self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
-        self.totalview = TotalView(self.data.get_categories())
-
+        self.totalview = TotalView(self.data.dataDic, self.data.get_categories(), self.focusIndex)
 
     def activate(self):
         completed = False
@@ -423,43 +514,68 @@ class BillBotUI():
                     completed = True
                 if event.type == pygame.KEYDOWN:
                     keyinput = str(event.unicode)
+                    print(f"INCOMING KEYINPUT |{keyinput}|{event}")
             if (not click) and self.actionlock:
                 self.actionlock = False
             # ===================================================================================================
-            if self.overlay:
-                unhook = self.overlay.renderBox(self.screen, keyinput)
+            if self.entry_overlay:
+                unhook = self.entry_overlay.renderBox(self.screen, keyinput)
                 if (unhook[0] is not False) and (not self.actionlock):
                     print(f'UNHOOK COMMAND: {unhook}')
-                    if unhook[0] != unhook[1]:
+                    if (unhook[0] != unhook[1]) and (unhook[0] != ""):
                         print("unhook - change/delete key")
                         self.data.remove_item(self.focusKey, unhook[0])
                     if unhook[1] != "":
                         print("unhook - add/update key")
-                        self.data.dataDic[self.focusKey][unhook[1]] = unhook[2]
-                    print("unhooking", self.overlay)
-                    self.overlay = None
-                    print(self.overlay)
+                        self.data.add_item(self.focusKey, unhook[1], unhook[2])
+                        # self.data.dataDic[self.focusKey][unhook[1]] = unhook[2]
+                    print("unhooking", self.entry_overlay)
+                    self.entry_overlay = None
+                    print(self.entry_overlay)
                     if unhook[0] != unhook[1]:
                         self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
+                    self.actionlock = True
+            # ===================================================================================================
+            elif self.category_overlay:
+                unhook = self.category_overlay.renderCategoryBox(self.data.get_categories(), self.screen, keyinput)
+                if unhook[0] is not None:
+                    if unhook[0] is True:
+                        self.data.add_category(unhook[1])
+                        self.totalview = TotalView(self.data.dataDic, self.data.get_categories(), self.focusIndex)
+                    self.category_overlay = None
                     self.actionlock = True
             # ===================================================================================================
             else:
                 self.screen.fill((200, 200, 200))
 
+                command, command_data = self.totalview.draw(self.screen)
+                if command == 1:
+                    self.focusKey = command_data
+                    self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
+                elif command == 2:
+                    print(f"commencing overlay for adding category")
+                    self.category_overlay = PopupDataEntry("", "")
+                    self.category_overlay.renderBlackout(self.screen)
+                    self.actionlock = True
+                elif command == 3:
+                    self.data.remove_category(command_data)
+                    self.focusIndex = 0
+                    self.focusKey = self.data.get_categories()[0]
+                    self.totalview = TotalView(self.data.dataDic, self.data.get_categories(), self.focusIndex)
+                    self.scroll_area = ScrollableList(self.focusKey, self.data.returnSubDic(self.focusKey))
+
                 returned_button = self.scroll_area.draw(self.screen)
-                self.totalview.draw(self.screen)
 
                 if returned_button and (not self.actionlock):
                     print(f"commencing overlay with {returned_button}")
-                    self.overlay = PopupDataEntry(*returned_button)
-                    self.overlay.renderBlackout(self.screen)
+                    self.entry_overlay = PopupDataEntry(*returned_button)
+                    self.entry_overlay.renderBlackout(self.screen)
                     self.actionlock = True
 
             # if self.actionlock: pygame.draw.rect(self.screen, (0, 0, 0), (0, 0, 10, 10))
             pygame.display.flip()
             self.clock.tick(30)
         return None
-
 
     def drawSubWindow(self):
         pass

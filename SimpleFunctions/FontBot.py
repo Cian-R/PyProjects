@@ -15,6 +15,6 @@ while True:
 
     win.fill((255, 255, 255))
     myfont = pygame.font.SysFont(fonts[index], 100)
-    win.blit(myfont.render(str(fonts[index]), False, (0, 0, 0)), (100, 100))
+    win.blit(myfont.render(str(fonts[index] + " " + str(index)), False, (0, 0, 0)), (100, 100))
 
     pygame.display.update()
